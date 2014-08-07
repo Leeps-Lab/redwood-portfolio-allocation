@@ -1,0 +1,76 @@
+.decision {
+  position: relative;
+  overflow: auto;
+  padding: 0 10px;
+}
+
+.choice {
+  position: relative;
+  float: left;
+  width: 50%;
+  background: #f8f8f8;
+}
+
+.choice input[type=radio] {
+  display: block;
+  float: left;
+  margin: 0 10px;
+  height: 100px;
+}
+
+.outcome-view {
+  position: absolute;
+  left: 40px;
+  top: 10px;
+  bottom: 10px;
+  right: 10px;
+}
+
+.choice input[type=radio]:checked {
+  border-left: 4px solid #f0f0f0;
+}
+
+input[type="radio"]:checked ~ .choice-background {
+  background: #f8f8f8;
+}
+
+.anchor-button {
+  display: block;
+  height: 200px;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 200px;
+  font-size: 48px;
+  background: #00b64f;
+  color: #ffffff;
+  border-bottom: 8px solid #007633;
+  text-decoration: none;
+}
+
+.anchor-button:hover {
+  text-decoration: none;
+  background: #37da7e;
+  color: #ffffff;
+  border-bottom: 8px solid #00b64f;
+}
+
+.anchor-button:active {
+  margin-top: 8px;
+  background: #007633;
+  color: #ffffff;
+  border: none;
+}
+
+.anchor-button:visited {
+  text-decoration: none
+}
+
+.disabled {
+  height: 200px !important;
+  margin-top: 0px !important;
+  cursor: default !important;
+  background: #ff4040 !important;
+  border-bottom: 8px solid #a60000 !important;
+}

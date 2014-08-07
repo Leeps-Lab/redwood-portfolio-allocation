@@ -1,0 +1,36 @@
+<div ng-controller="SubjectCtrl" style="padding-top:60px;">
+    
+  <div class="navbar navbar-fixed-top container">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <div class="brand" href="#">Economics Experiment</div>
+        <div class="nav-collapse collapse">
+          <p class="navbar-text pull-right">
+            User ID: <span name="data-user-id" class="navbar-link">{{user_id}}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="row">
+      <div class="span12">
+        <div ng-repeat="decision in decisions" class="decision">
+          <label for="choice-{{$index}}-0" class="choice">
+            <input id="choice-{{$index}}-0" name="decision-{{$index}}" type="radio" ng-model="subjectDecisions[$index]" value="lessRisk">
+            <span ng-if="redwoodLoaded">
+              <div class="outcome-view" choice-view choice="{{decision.choice1}}"></div>
+            </span>
+          </label>
+          <label for="choice-{{$index}}-1" class="choice">
+            <input id="choice-{{$index}}-1" name="decision-{{$index}}" type="radio" ng-model="subjectDecisions[$index]" value="moreRisk">
+            <span ng-if="redwoodLoaded">
+              <div class="outcome-view" choice-view choice="{{decision.choice2}}"></div>
+            </span>
+          </label>
+        </div>
+        <a id="finish-button" class="anchor-button disabled" href="javascript:">10 Unanswered Questions</a>
+      </div>
+    </div>
+  </div>
+</div>
