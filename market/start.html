@@ -1,0 +1,78 @@
+<div ng-controller="SubjectCtrl">
+    
+  <div rw-subject-header title="Risk Elicitation"></div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <div ra-plot="stochasticValues" style="width: 100%; height: 400px;"></div>
+      </div>
+      <div class="col-md-4" style="height: 400px; overflow: scroll;">
+        <table class="table table-bordered">
+          <tr>
+            <th>Something</th>
+            <th>Diff</th>
+            <th>Expected</th>
+            <th>Realized</th>
+          </tr>
+          <tr ng-repeat="result in roundResults" ng-class="{danger: result.realized < 0}">
+            <td>S: {{result.allocation.stock | number: 2}}, B: {{result.allocation.bond | number: 2}}</td>
+            <td>{{result.diff * 100 | number: 0}}%</td>
+            <td>{{result.expected * 100 | number: 0}}%</td>
+            <td>{{result.realized * 100 | number: 0}}%</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 40px">
+      <div class="col-md-8">
+        <p>Starting Wealth: {{budget}}</p>
+        <div class="row" style="margin-bottom: 20px">
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-addon">
+                S (Return: Unknown)
+              </span>
+              <input class="form-control" type="text" ng-model="allocation.stock">
+            </div>
+          </div>
+          <div class="col-md-8">
+            <input class="form-control" type="range" ng-model="allocation.stock" min="0" max="{{budget}}">
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 20px">
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-addon">
+                B (Return: {{bondReturn}})
+              </span>
+              <input class="form-control" type="text" ng-model="allocation.bond">
+            </div>
+          </div>
+          <div class="col-md-8">
+            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{budget}}">
+          </div>
+        </div>
+        <button class="btn btn-success" ng-click="confirmAllocation()">
+          Confirm Allocation
+        </button>
+      </div>
+      <div class="col-md-4">
+        <table class="table table-bordered">
+          <tr>
+            <th>Value of Portfolio</th>
+            <td>{{portfolioValue}}</td>
+          </tr>
+          <tr>
+            <th>Realized Gain/Loss</th>
+            <td>{{realizedGain}}</td>
+          </tr>
+          <tr>
+            <th>Wallet/Bank</th>
+            <td>{{bank}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
