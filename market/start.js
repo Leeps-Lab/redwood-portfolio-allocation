@@ -18,7 +18,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   $scope.realizedGain = 0;
   $scope.roundResults = [];
   $scope.stochasticValues = [];
-  $scope.bondReturn = 0.2;
 
   // Setup scope variable bindings
 
@@ -82,14 +81,15 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   rs.on_load(function() {
     // Load configuration
     $scope.config = {
-      rounds: rs.config.rounds || 20,
-      daysPerRound: rs.config.daysPerRound || 252,
-      secondsPerDay: rs.config.secondsPerDay || 0.05,
+      rounds: rs.config.rounds                 || 20,
+      daysPerRound: rs.config.daysPerRound     || 252,
+      secondsPerDay: rs.config.secondsPerDay   || 0.05,
       startingWealth: rs.config.startingWealth || 1000,
       wealthPerRound: rs.config.wealthPerRound || 1000,
-      minimumWealth: rs.config.minimumWealth || 200,
-      plotMinY: rs.config.plotMinY || 0.5,
-      plotMaxY: rs.config.plotMaxY || 1.5,
+      minimumWealth: rs.config.minimumWealth   || 200,
+      bondReturn: rs.config.bondReturn         || 0.2,
+      plotMinY: rs.config.plotMinY             || 0.5,
+      plotMaxY: rs.config.plotMaxY             || 1.5,
       stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
     };
 
