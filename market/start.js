@@ -1,5 +1,13 @@
+Redwood.factory("PortfolioAllocation", function() {
+  return {
 
-Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", function($scope, rs, $interval) {
+    defaultStochasticFunction: function(x) {
+      return Math.random() * 1.0 + 0.5;
+    },
+  }
+});
+
+Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", "PortfolioAllocation", function($scope, rs, $interval, experiment) {
   $scope.round = 0;
   $scope.budget = 1000;
   $scope.bank = 0;
@@ -28,7 +36,10 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", func
   });
 
   rs.on_load(function() {
-
+    // Load configuration
+    $scope.config = {
+      stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
+    };
   });
 
   rs.on("confirmAllocation", function(data) {
