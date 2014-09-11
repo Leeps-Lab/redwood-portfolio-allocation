@@ -38,6 +38,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", "Por
   rs.on_load(function() {
     // Load configuration
     $scope.config = {
+      startingWealth: rs.config.startingWealth || 1000,
       stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
     };
   });
