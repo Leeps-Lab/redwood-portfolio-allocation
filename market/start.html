@@ -26,31 +26,26 @@
     </div>
     <div class="row" style="margin-top: 40px">
       <div class="col-md-8">
-        <p>Starting Wealth: {{budget}}</p>
+        <p>Starting Wealth: {{config.wealthPerRound}}</p>
         <div class="row" style="margin-bottom: 20px">
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-addon">
-                S (Return: Unknown)
+                S (Unknown Return)
               </span>
               <input class="form-control" type="text" ng-model="allocation.stock">
             </div>
           </div>
-          <div class="col-md-8">
-            <input class="form-control" type="range" ng-model="allocation.stock" min="0" max="{{budget}}">
+          <div class="col-md-4">
+            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{config.wealthPerRound}}">
           </div>
-        </div>
-        <div class="row" style="margin-bottom: 20px">
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-addon">
-                B (Return: {{bondReturn}})
+                B ({{bondReturn}}% Return)
               </span>
               <input class="form-control" type="text" ng-model="allocation.bond">
             </div>
-          </div>
-          <div class="col-md-8">
-            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{budget}}">
           </div>
         </div>
         <button class="btn btn-success" ng-click="confirmAllocation()">

@@ -14,25 +14,19 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   $scope.plotNeedsRedraw = false;
 
   $scope.round = 0;
-  $scope.budget = 1000;
   $scope.bank = 0;
   $scope.realizedGain = 0;
   $scope.roundResults = [];
   $scope.stochasticValues = [];
   $scope.bondReturn = 0.2;
 
-  $scope.allocation = {
-    stock: $scope.budget/2,
-    bond: $scope.budget/2
-  };
-
   // Setup scope variable bindings
 
   $scope.$watch("allocation.stock", function() {
-    $scope.allocation.bond = $scope.budget - $scope.allocation.stock;
+    $scope.allocation.bond = $scope.config.wealthPerRound - $scope.allocation.stock;
   });
   $scope.$watch("allocation.bond", function() {
-    $scope.allocation.stock = $scope.budget - $scope.allocation.bond;
+    $scope.allocation.stock = $scope.config.wealthPerRound - $scope.allocation.bond;
   });
 
   $scope.$watch(function() {return rs.is_realtime}, function(is_realtime) {
@@ -97,6 +91,11 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       plotMinY: rs.config.plotMinY || 0.5,
       plotMaxY: rs.config.plotMaxY || 1.5,
       stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
+    };
+
+    $scope.allocation = {
+      stock: $scope.config.wealthPerRound/2,
+      bond: $scope.config.wealthPerRound/2
     };
   });
 
