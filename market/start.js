@@ -8,14 +8,12 @@ Redwood.factory("PortfolioAllocation", function() {
 });
 
 Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "PortfolioAllocation", function($scope, rs, $timeout, experiment) {
-  // Initialize scope variables
+  // Initialize some scope variables (the reset are initialized in on_load)
 
   $scope.isSimulating = false;
   $scope.plotNeedsRedraw = false;
 
   $scope.round = 0;
-  $scope.bank = 0;
-  $scope.realizedGain = 0;
   $scope.roundResults = [];
   $scope.stochasticValues = [];
 
@@ -49,6 +47,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   $scope.confirmAllocation = function() {
     isSimulating = true; // too make sure controls are disabled
     rs.trigger("startedRound", {
+      round: $scope.round,
       allocation: $scope.allocation
     });
   };
@@ -68,9 +67,18 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
         });
 
       } else {
+        // compute round results
+        var valuesForRound = $scope.stochasticValues[$scope.round];
+        var lastValue = valuesForRound[valuesForRound.length - 1][1];
+        var returnFromStocks = $scope.allocation.stock * lastValue;
+        var returnFromBonds = $scope.allocation.bond * (1.0 + $scope.config.bondReturn);
+        var totalReturn = returnFromStocks + returnFromBonds;
 
         rs.trigger("roundEnded", {
-          round: $scope.round
+          round: $scope.round,
+          allocation: $scope.allocation,
+          returnFromBonds: returnFromBonds,
+          returnFromStocks: returnFromStocks,
         });
 
       }
@@ -98,6 +106,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       stock: $scope.config.wealthPerRound/2,
       bond: $scope.config.wealthPerRound/2
     };
+
+    $scope.bank = $scope.config.startingWealth;
+    $scope.realizedGain = 0;
   });
 
   // Message Response Handlers
@@ -105,7 +116,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   rs.on("startedRound", function(data) {
     // for recovery
     $scope.allocation = data.allocation;
-    
+
     $scope.stochasticValues.push([]);
     $scope.isSimulating = true;
     simulateDay(0)();
@@ -126,9 +137,28 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   });
 
   rs.on("roundEnded", function(data) {
+
+    var totalReturn = data.returnFromStocks + data.returnFromBonds;
+    var expectedReturnPercentage = (data.allocation.bond / $scope.config.wealthPerRound) * $scope.config.bondReturn; // ask what to do here
+    var realizedReturnPercentage = (totalReturn - $scope.config.wealthPerRound) / $scope.config.wealthPerRound;
+
+    // add entry to round results
+    $scope.roundResults.push({
+      allocation: data.allocation,
+      diff: realizedReturnPercentage - expectedReturnPercentage,
+      expected: expectedReturnPercentage,
+      realized: realizedReturnPercentage,
+    });
+
+    // MONEY IN THE BANK
+    $scope.bank = totalReturn;
+
+    // if this subject is broke, end their whole career
+    // pass
+
     $scope.round = data.round + 1;
     $scope.isSimulating = false;
-  })
+  });
 
 }]);
 
@@ -146,7 +176,7 @@ Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
           $.plot(element, plotData, {
             xaxis: {
               min: 0,
-              max: scope.config.daysPerRound
+              max: scope.config.daysPerRound + 1
             },
             yaxis: {
               min: scope.config.plotMinY,

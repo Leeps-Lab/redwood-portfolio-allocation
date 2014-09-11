@@ -10,13 +10,15 @@
       <div class="col-md-4" style="height: 400px; overflow: scroll;">
         <table class="table table-bordered">
           <tr>
-            <th>Something</th>
+            <th>Stocks</th>
+            <th>Bonds</th>
             <th>Diff</th>
             <th>Expected</th>
             <th>Realized</th>
           </tr>
           <tr ng-repeat="result in roundResults" ng-class="{danger: result.realized < 0}">
-            <td>S: {{result.allocation.stock | number: 2}}, B: {{result.allocation.bond | number: 2}}</td>
+            <td>{{result.allocation.stock | number: 2}}</td>
+            <td>{{result.allocation.bond | number: 2}}</td>
             <td>{{result.diff * 100 | number: 0}}%</td>
             <td>{{result.expected * 100 | number: 0}}%</td>
             <td>{{result.realized * 100 | number: 0}}%</td>
@@ -31,7 +33,7 @@
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-addon">
-                S (Unknown Return)
+                Stocks (Unknown)
               </span>
               <input class="form-control" type="text" ng-model="allocation.stock" ng-disabled="isSimulating">
             </div>
@@ -42,7 +44,7 @@
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-addon">
-                B ({{config.bondReturn}}% Return)
+                Bonds ({{config.bondReturn * 100}}%)
               </span>
               <input class="form-control" type="text" ng-model="allocation.bond" ng-disabled="isSimulating">
             </div>
