@@ -11,6 +11,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // Initialize scope variables
 
   $scope.isSimulating = false;
+  $scope.plotNeedsRedraw = false;
 
   $scope.round = 0;
   $scope.budget = 1000;
@@ -35,20 +36,25 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   });
 
   $scope.$watch(function() {return rs.is_realtime}, function(is_realtime) {
-    console.log("sync ended");
-    // hack to get day simulation "timeout chain" to resume.
-    if (is_realtime && $scope.isSimulating) {
-      console.log("resuming simulation timeout chain");
-      var lastSimulatedDay = $scope.stochasticValues[$scope.round].length - 1;
-      $timeout(simulateDay(lastSimulatedDay + 1), $scope.config.secondsPerDay * 1000);
+    if (is_realtime) {
+
+      if ($scope.isSimulating) {
+        // hack to get day simulation "timeout chain" to resume.
+        console.log("resuming simulation timeout chain");
+        var lastSimulatedDay = $scope.stochasticValues[$scope.round].length - 1;
+        $timeout(simulateDay(lastSimulatedDay + 1), $scope.config.secondsPerDay * 1000);
+      } else {
+        // force the plot to redraw
+        console.log("forcing plot redraw");
+        $scope.plotNeedsRedraw = true;
+      }
     }
   })
 
   // Setup scope functions
 
   $scope.confirmAllocation = function() {
-    rs.trigger("confirmedAllocation", {
-      //stochasticValue: Math.random() * 2.0,
+    rs.trigger("startedRound", {
       allocation: $scope.allocation
     });
   };
@@ -59,7 +65,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   var simulateDay = function(day) {
     return function() {
-      console.log("simulating day: " + day)
       if (day < $scope.config.daysPerRound) {
 
         rs.trigger("simulatedDay", {
@@ -69,9 +74,11 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
         });
 
       } else {
+
         rs.trigger("roundEnded", {
           round: $scope.round
         });
+
       }
     }
   };
@@ -95,10 +102,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   // Message Response Handlers
 
-  rs.on("confirmedAllocation", function(data) {
-    // Start simulation of one trading year
-
-    // to be captured in simulateDay
+  rs.on("startedRound", function(data) {
     $scope.stochasticValues.push([]);
     $scope.isSimulating = true;
     simulateDay(0)();
@@ -108,7 +112,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var round = data.round;
     var day = data.day;
     var value = data.value;
-    console.log("simulated day: " + day)
 
     // add today's results to the stochastic series
     $scope.stochasticValues[round].push([day, value]);
@@ -120,7 +123,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   });
 
   rs.on("roundEnded", function(data) {
-    console.log("round ended");
     $scope.round = data.round + 1;
     $scope.isSimulating = false;
   })
@@ -131,12 +133,13 @@ Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
       raPlot: "=",
-      config: "="
+      config: "=",
+      needsRedraw: "=",
     },
     link: function(scope, element, attrs) {
 
-      scope.$watch(function() {return scope.raPlot}, function(plotData) {
-        if (plotData) {
+      var redrawPlot = function(plotData) {
+        if (plotData && rs.is_realtime) {
           $.plot(element, plotData, {
             xaxis: {
               min: 0,
@@ -147,8 +150,14 @@ Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
               max: scope.config.plotMaxY
             }
           });
+          scope.needsRedraw = false;
         }
-      }, true);
+      }
+
+      scope.$watch(function() {return scope.needsRedraw}, function() {
+        redrawPlot(scope.raPlot);
+      });
+      scope.$watch(function() {return scope.raPlot}, redrawPlot, true);
 
     }
   }
