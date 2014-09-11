@@ -92,7 +92,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     $scope.config = {
       rounds: rs.config.rounds                 || 20,
       daysPerRound: rs.config.daysPerRound     || 252,
-      secondsPerDay: rs.config.secondsPerDay   || 0.05,
+      secondsPerDay: rs.config.secondsPerDay   || 0.01,
       startingWealth: rs.config.startingWealth || 1000,
       wealthPerRound: rs.config.wealthPerRound || 1000,
       minimumWealth: rs.config.minimumWealth   || 200,
@@ -153,11 +153,23 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     // MONEY IN THE BANK
     $scope.bank += totalReturn - $scope.config.wealthPerRound;
 
-    // if this subject is broke, end their whole career
-    // pass
+    // if the subject is broke, end this guy's whole career
+    if ($scope.bank <= $scope.config.minimumWealth) {
+      $scope.bank = $scope.config.minimumWealth;
+      rs.set_points($scope.bank);
+      rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
+      rs.next_period();
+    }
 
     $scope.round = data.round + 1;
     $scope.isSimulating = false;
+
+    // if all rounds are finished, finish it up
+    if ($scope.round >= $scope.config.rounds) {
+      rs.set_points($scope.bank);
+      rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
+      rs.next_period();
+    }
   });
 
 }]);
