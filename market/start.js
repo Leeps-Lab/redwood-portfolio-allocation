@@ -21,6 +21,20 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", "Por
     bond: $scope.budget/2
   };
 
+  rs.on_load(function() {
+    // Load configuration
+    $scope.config = {
+      rounds: rs.config.rounds || 20,
+      roundDuration: rs.config.roundDuration || 252,
+      startingWealth: rs.config.startingWealth || 1000,
+      wealthPerRound: rs.config.wealthPerRound || 1000,
+      minimumWealth: rs.config.minimumWealth || 200,
+      plotMinY: rs.config.plotMinY || 0.5,
+      plotMaxY: rs.config.plotMaxY || 1.5,
+      stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
+    };
+  });
+
   $scope.confirmAllocation = function() {
     rs.trigger("confirmAllocation", {
       stochasticValue: Math.random() * 2.0,
@@ -33,14 +47,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$interval", "Por
   });
   $scope.$watch("allocation.bond", function() {
     $scope.allocation.stock = $scope.budget - $scope.allocation.bond;
-  });
-
-  rs.on_load(function() {
-    // Load configuration
-    $scope.config = {
-      startingWealth: rs.config.startingWealth || 1000,
-      stochasticFunction: new Function("x", "return " + rs.config.stochasticFunction) || experiment.defaultStochasticFunction,
-    };
   });
 
   rs.on("confirmAllocation", function(data) {
