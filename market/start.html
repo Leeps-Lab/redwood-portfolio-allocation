@@ -58,15 +58,15 @@
         <table class="table table-bordered">
           <tr>
             <th>Value of Portfolio</th>
-            <td>{{portfolioValue}}</td>
+            <td>{{portfolioValue | number: 2}}</td>
           </tr>
           <tr>
             <th>Realized Gain/Loss</th>
-            <td>{{realizedGain}}</td>
+            <td>{{(bank - config.startingWealth) / config.startingWealth | number: 2}}</td>
           </tr>
           <tr>
             <th>Wallet/Bank</th>
-            <td>{{bank}}</td>
+            <td>{{bank | number: 2}}</td>
           </tr>
         </table>
       </div>

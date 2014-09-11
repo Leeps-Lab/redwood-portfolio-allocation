@@ -151,7 +151,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     });
 
     // MONEY IN THE BANK
-    $scope.bank = totalReturn;
+    $scope.bank += totalReturn - $scope.config.wealthPerRound;
 
     // if this subject is broke, end their whole career
     // pass
