@@ -33,22 +33,22 @@
               <span class="input-group-addon">
                 S (Unknown Return)
               </span>
-              <input class="form-control" type="text" ng-model="allocation.stock">
+              <input class="form-control" type="text" ng-model="allocation.stock" ng-disabled="isSimulating">
             </div>
           </div>
           <div class="col-md-4">
-            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{config.wealthPerRound}}">
+            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{config.wealthPerRound}}" ng-disabled="isSimulating">
           </div>
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-addon">
                 B ({{config.bondReturn}}% Return)
               </span>
-              <input class="form-control" type="text" ng-model="allocation.bond">
+              <input class="form-control" type="text" ng-model="allocation.bond" ng-disabled="isSimulating">
             </div>
           </div>
         </div>
-        <button class="btn btn-success" ng-click="confirmAllocation()">
+        <button class="btn btn-success" ng-click="confirmAllocation()" ng-disabled="isSimulating">
           Confirm Allocation
         </button>
       </div>

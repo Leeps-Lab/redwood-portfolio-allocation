@@ -47,6 +47,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // Setup scope functions
 
   $scope.confirmAllocation = function() {
+    isSimulating = true; // too make sure controls are disabled
     rs.trigger("startedRound", {
       allocation: $scope.allocation
     });
@@ -102,6 +103,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // Message Response Handlers
 
   rs.on("startedRound", function(data) {
+    // for recovery
+    $scope.allocation = data.allocation;
+    
     $scope.stochasticValues.push([]);
     $scope.isSimulating = true;
     simulateDay(0)();
