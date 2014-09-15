@@ -265,10 +265,10 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 /*
   Plot Directive
 */
-Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
+Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
-      raPlot: "=",
+      paPlot: "=",
       config: "=",
       needsRedraw: "=",
     },
@@ -300,10 +300,34 @@ Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
       }
 
       scope.$watch(function() {return scope.needsRedraw}, function() {
-        redrawPlot(scope.raPlot);
+        redrawPlot(scope.paPlot);
       });
-      scope.$watch(function() {return scope.raPlot}, redrawPlot, true);
+      scope.$watch(function() {return scope.paPlot}, redrawPlot, true);
 
+    }
+  }
+}]);
+
+/*
+  Percentage Input Directive
+*/
+Redwood.directive("paPercentage", ["RedwoodSubject", "$filter", function(rs, $filter) {
+  return {
+    require: "ngModel",
+    scope: {
+      max: "="
+    },
+    link: function(scope, element, attrs, controller) {
+      controller.$parsers.push(
+          function(viewValue){
+              return parseFloat(viewValue * scope.max) / 100;
+          }
+      );
+      controller.$formatters.push(
+          function(modelValue){
+              return $filter('number')(modelValue / scope.max * 100, 1) + "%";
+          }
+      );
     }
   }
 }]);
