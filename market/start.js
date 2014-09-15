@@ -1,3 +1,10 @@
+/*
+  Portfolio Allocation: start.js
+*/
+
+/*
+  Convenience functions, mostly for loading stochastic series data
+*/
 Redwood.factory("PortfolioAllocation", ["$q", "$http", function($q, $http) {
   var api = {};
 
@@ -62,6 +69,9 @@ Redwood.factory("PortfolioAllocation", ["$q", "$http", function($q, $http) {
   return api;
 }]);
 
+/*
+  Application controller
+*/
 Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "PortfolioAllocation", function($scope, rs, $timeout, experiment) {
   // Initialize some scope variables (the reset are initialized in on_load)
 
@@ -236,7 +246,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       $scope.bank = $scope.config.minimumWealth;
       rs.set_points($scope.bank);
       rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
-      rs.next_period();
+      rs.next_period(5);
     }
 
     $scope.round = data.round + 1;
@@ -246,12 +256,15 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     if ($scope.round >= $scope.config.rounds) {
       rs.set_points($scope.bank);
       rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
-      rs.next_period();
+      rs.next_period(5);
     }
   });
 
 }]);
 
+/*
+  Plot Directive
+*/
 Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
@@ -263,7 +276,16 @@ Redwood.directive("raPlot", ["RedwoodSubject", function(rs) {
 
       var redrawPlot = function(plotData) {
         if (plotData && rs.is_realtime) {
-          $.plot(element, plotData, {
+          // convert raw data into formatted data series
+          var flotData = [];
+          for (var i = 0; i < plotData.length; i++) {
+            flotData[i] = {
+              data: plotData[i],
+              color: i == plotData.length - 1 ? "#6666ff" : "#c8c8c8" 
+            };
+          }
+          // plot the data!
+          $.plot(element, flotData, {
             xaxis: {
               min: 0,
               max: scope.config.daysPerRound + 1
