@@ -125,7 +125,32 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   // Other functions
 
-  // use rs.is_realtime to buffer draws
+  var getMarketValue = function(round, day) {
+    if (day < 0) return 1.0;
+    return $scope.marketValues[round][day][1];
+  }
+
+  var firstMarketValueForRound = function(round) {
+    return getMarketValue(round, 0);
+  }
+
+  var lastMarketValueForRound = function(round) {
+    return getMarketValue(round, $scope.config.daysPerRound - 1);
+  }
+
+  var marketReturnPercentageForRound = function(round) {
+    var valuesForRound = $scope.marketValues[round];
+    var lastIndex = valuesForRound.length - 1;
+    return valuesForRound[lastIndex][1] / valuesForRound[0][1] - 1.0;
+  }
+
+  var currentStockReturn = function() {
+    return $scope.allocation.stock * lastMarketValueForRound($scope.round);
+  }
+
+  var currentBondReturn = function() {
+    return $scope.allocation.bond * (1.0 + $scope.config.bondReturn);
+  }
 
   var simulateDay = function(day) {
     return function() {
@@ -141,7 +166,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
         // wait for the stochastic function to load if necessary
         // (If the stochastic function is a promise, then it hasn't loaded yet)
-
         if (typeof $scope.config.stochasticFunction.then === "function") {
           if (rs.is_realtime) {
             $scope.config.stochasticFunction.then(triggerNextDay);
@@ -152,17 +176,11 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
       } else {
         // compute round results
-        var valuesForRound = $scope.marketValues[$scope.round];
-        var lastValue = valuesForRound[valuesForRound.length - 1][1];
-        var returnFromStocks = $scope.allocation.stock * lastValue;
-        var returnFromBonds = $scope.allocation.bond * (1.0 + $scope.config.bondReturn);
-        var totalReturn = returnFromStocks + returnFromBonds;
-
         rs.trigger("roundEnded", {
           round: $scope.round,
           allocation: $scope.allocation,
-          returnFromBonds: returnFromBonds,
-          returnFromStocks: returnFromStocks,
+          returnFromBonds: currentBondReturn(),
+          returnFromStocks: currentStockReturn(),
         });
 
       }
@@ -232,7 +250,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     */
 
     /* Daily return over time */
-    var previousValue = day > 0 ? $scope.marketValues[round][day - 1][1] : 1.0;
+    var previousValue = getMarketValue(round, day - 1);
     var stockReturn = value / previousValue;
     var bondReturnValue = (($scope.config.bondReturn / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
     var stockReturnValue = stockReturn * $scope.allocation.stock;
@@ -247,9 +265,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   rs.on("roundEnded", function(data) {
 
-    var lastMarketValue = $scope.marketValues[data.round][$scope.config.daysPerRound-1][1];
-    var firstMarketValue = $scope.marketValues[data.round][0][1];
-    var marketReturnPercentage = lastMarketValue / firstMarketValue - 1.0;
+    var marketReturnPercentage = marketReturnPercentageForRound(data.round);
     
     var totalReturn = data.returnFromStocks + data.returnFromBonds;
     var realizedReturnPercentage = (totalReturn / $scope.config.wealthPerRound) - 1.0;
