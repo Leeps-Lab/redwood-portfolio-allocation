@@ -81,6 +81,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.round = 0;
   $scope.roundResults = [];
+  // stores computed stochastic values like so:
+  // [[[0, val], [1, val], [day, val], ...], [values for round], ...]
+  // $scope.stochasticValues[i] is sequence of stochastic values for round i
   $scope.stochasticValues = [];
 
   // Setup scope variable bindings
@@ -226,16 +229,18 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   rs.on("roundEnded", function(data) {
 
+    var lastStochasticValue = $scope.stochasticValues[data.round][$scope.config.daysPerRound-1][1];
+    var firstStochasticValue = $scope.stochasticValues[data.round][0][1];
+    var marketReturnPercentage = lastStochasticValue / firstStochasticValue - 1.0;
+    
     var totalReturn = data.returnFromStocks + data.returnFromBonds;
-    var expectedReturnPercentage = (data.allocation.bond / $scope.config.wealthPerRound) * $scope.config.bondReturn; // ask what to do here
-    var realizedReturnPercentage = (totalReturn - $scope.config.wealthPerRound) / $scope.config.wealthPerRound;
+    var realizedReturnPercentage = (totalReturn / $scope.config.wealthPerRound) - 1.0;
 
     // add entry to round results
     $scope.roundResults.push({
       allocation: data.allocation,
-      diff: realizedReturnPercentage - expectedReturnPercentage,
-      expected: expectedReturnPercentage,
-      realized: realizedReturnPercentage,
+      marketReturn: marketReturnPercentage,
+      realizedReturn: realizedReturnPercentage,
     });
 
     // MONEY IN THE BANK

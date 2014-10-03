@@ -12,16 +12,14 @@
           <tr>
             <th>Stocks</th>
             <th>Bonds</th>
-            <th>Diff</th>
-            <th>Expected</th>
+            <th>Market</th>
             <th>Realized</th>
           </tr>
           <tr ng-repeat="result in roundResults" ng-class="{danger: result.realized < 0}">
             <td>{{result.allocation.stock | number: 2}}</td>
             <td>{{result.allocation.bond | number: 2}}</td>
-            <td>{{result.diff * 100 | number: 0}}%</td>
-            <td>{{result.expected * 100 | number: 0}}%</td>
-            <td>{{result.realized * 100 | number: 0}}%</td>
+            <td>{{result.marketReturn * 100 | number: 0}}%</td>
+            <td>{{result.realizedReturn * 100 | number: 0}}%</td>
           </tr>
         </table>
       </div>
