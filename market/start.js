@@ -81,10 +81,13 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.round = 0;
   $scope.roundResults = [];
+
   // stores computed stochastic values like so:
   // [[[0, val], [1, val], [day, val], ...], [values for round], ...]
-  // $scope.stochasticValues[i] is sequence of stochastic values for round i
-  $scope.stochasticValues = [];
+  // $scope.marketValues[i] is sequence of stochastic values for round i
+  $scope.marketValues = [];
+
+  $scope.portfolioReturns = [];
 
   // Setup scope variable bindings
 
@@ -100,7 +103,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
       if ($scope.isSimulating) {
         // hack to get day simulation "timeout chain" to resume.
-        var lastSimulatedDay = $scope.stochasticValues[$scope.round].length - 1;
+        var lastSimulatedDay = $scope.marketValues[$scope.round].length - 1;
         $timeout(simulateDay(lastSimulatedDay + 1), $scope.config.secondsPerDay * 1000);
       } else {
         // force the plot to redraw
@@ -149,7 +152,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
       } else {
         // compute round results
-        var valuesForRound = $scope.stochasticValues[$scope.round];
+        var valuesForRound = $scope.marketValues[$scope.round];
         var lastValue = valuesForRound[valuesForRound.length - 1][1];
         var returnFromStocks = $scope.allocation.stock * lastValue;
         var returnFromBonds = $scope.allocation.bond * (1.0 + $scope.config.bondReturn);
@@ -178,8 +181,8 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       wealthPerRound: rs.config.wealthPerRound || 1000,
       minimumWealth: rs.config.minimumWealth   || 200,
       bondReturn: rs.config.bondReturn         || 0.2,
-      plotMinY: rs.config.plotMinY             || 0.5,
-      plotMaxY: rs.config.plotMaxY             || 1.5,
+      plotMinY: rs.config.plotMinY             || 0.0,
+      plotMaxY: rs.config.plotMaxY             || 2.0,
       stochasticFunction: null,
     };
 
@@ -208,7 +211,8 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     // for recovery
     $scope.allocation = data.allocation;
 
-    $scope.stochasticValues.push([]);
+    $scope.marketValues.push([]);
+    $scope.portfolioReturns.push([]);
     $scope.isSimulating = true;
     simulateDay(0)();
   });
@@ -217,10 +221,24 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var round = data.round;
     var day = data.day;
     var value = data.value;
-
     // add today's results to the stochastic series
-    $scope.stochasticValues[round].push([day, value]);
+    $scope.marketValues[round].push([day, value]);
 
+    /* Cumulative return over time
+    var stockReturn = value / $scope.marketValues[round][0][1];
+    var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
+    var stockReturnValue = stockReturn * $scope.allocation.stock;
+    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
+    */
+
+    /* Daily return over time */
+    var previousValue = day > 0 ? $scope.marketValues[round][day - 1][1] : 1.0;
+    var stockReturn = value / previousValue;
+    var bondReturnValue = (($scope.config.bondReturn / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
+    var stockReturnValue = stockReturn * $scope.allocation.stock;
+    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
+
+    $scope.portfolioReturns[round].push([day, portfolioReturn]);
     // simulate the next day
     if (rs.is_realtime) {
       $timeout(simulateDay(day + 1), $scope.config.secondsPerDay * 1000);
@@ -229,9 +247,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   rs.on("roundEnded", function(data) {
 
-    var lastStochasticValue = $scope.stochasticValues[data.round][$scope.config.daysPerRound-1][1];
-    var firstStochasticValue = $scope.stochasticValues[data.round][0][1];
-    var marketReturnPercentage = lastStochasticValue / firstStochasticValue - 1.0;
+    var lastMarketValue = $scope.marketValues[data.round][$scope.config.daysPerRound-1][1];
+    var firstMarketValue = $scope.marketValues[data.round][0][1];
+    var marketReturnPercentage = lastMarketValue / firstMarketValue - 1.0;
     
     var totalReturn = data.returnFromStocks + data.returnFromBonds;
     var realizedReturnPercentage = (totalReturn / $scope.config.wealthPerRound) - 1.0;
@@ -273,22 +291,30 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
-      paPlot: "=",
-      config: "=",
-      needsRedraw: "=",
+      paPlot: "=", // The set of sequences of market values
+      portfolioReturns: "=", // The set of sequences of total portfolio return
+      config: "=", // the experiment configuration
+      needsRedraw: "=", // when set, the directive will attempt to redraw the plot
     },
     link: function(scope, element, attrs) {
 
-      var redrawPlot = function(plotData) {
-        if (plotData && rs.is_realtime) {
+      var redrawPlot = function(marketValues, portfolioReturns) {
+        if (marketValues && rs.is_realtime) {
           // convert raw data into formatted data series
           var flotData = [];
-          for (var i = 0; i < plotData.length; i++) {
+          for (var i = 0; i < marketValues.length; i++) {
             flotData[i] = {
-              data: plotData[i],
-              color: i == plotData.length - 1 ? "#6666ff" : "#c8c8c8" 
+              data: marketValues[i],
+              color: i == marketValues.length - 1 ? "#6666ff" : "#c8c8e0" 
             };
           }
+          for (var i = 0; i < portfolioReturns.length; i++) {
+            flotData.push({
+              data: portfolioReturns[i],
+              color: i == portfolioReturns.length - 1 ? "#66ff66" : "#c8e0c8"
+            });
+          }
+
           // plot the data!
           $.plot(element, flotData, {
             xaxis: {
@@ -305,9 +331,14 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
       }
 
       scope.$watch(function() {return scope.needsRedraw}, function() {
-        redrawPlot(scope.paPlot);
+        redrawPlot(scope.paPlot, scope.portfolioReturns);
       });
-      scope.$watch(function() {return scope.paPlot}, redrawPlot, true);
+      scope.$watch(function() {return scope.paPlot}, function() {
+        redrawPlot(scope.paPlot, scope.portfolioReturns);
+      }, true);
+      scope.$watch(function() {return scope.portfolioReturns}, function() {
+        redrawPlot(scope.paPlot, scope.portfolioReturns);
+      }, true);
 
     }
   }
