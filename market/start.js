@@ -87,7 +87,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // $scope.marketValues[i] is sequence of stochastic values for round i
   $scope.marketValues = [];
 
-  $scope.portfolioReturns = [];
+  $scope.portfolioReturns = [[]]; // only one needs to show at a time
 
   // Setup scope variable bindings
 
@@ -230,7 +230,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     $scope.allocation = data.allocation;
 
     $scope.marketValues.push([]);
-    $scope.portfolioReturns.push([]);
+    $scope.portfolioReturns[0] = [];
     $scope.isSimulating = true;
     simulateDay(0)();
   });
@@ -242,21 +242,20 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     // add today's results to the stochastic series
     $scope.marketValues[round].push([day, value]);
 
-    /* Cumulative return over time
+    // Cumulative return over time
     var stockReturn = value / $scope.marketValues[round][0][1];
     var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
     var stockReturnValue = stockReturn * $scope.allocation.stock;
     var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
-    */
-
+    
     /* Daily return over time */
-    var previousValue = getMarketValue(round, day - 1);
+    /*var previousValue = getMarketValue(round, day - 1);
     var stockReturn = value / previousValue;
     var bondReturnValue = (($scope.config.bondReturn / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
     var stockReturnValue = stockReturn * $scope.allocation.stock;
-    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
+    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;*/
 
-    $scope.portfolioReturns[round].push([day, portfolioReturn]);
+    $scope.portfolioReturns[0].push([day, portfolioReturn]);
     // simulate the next day
     if (rs.is_realtime) {
       $timeout(simulateDay(day + 1), $scope.config.secondsPerDay * 1000);
