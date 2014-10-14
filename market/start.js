@@ -80,6 +80,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   $scope.plotNeedsRedraw = false;
 
   $scope.round = 0;
+  $scope.actualRound = 1;
   $scope.roundResults = [];
 
   // stores computed stochastic values like so:
@@ -112,6 +113,10 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       }
     }
   })
+
+  $scope.$watch("round", function(round) {
+    $scope.actualRound = round + 1;
+  });
 
   // Setup scope functions
 
