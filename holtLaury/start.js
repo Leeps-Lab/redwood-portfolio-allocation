@@ -1,10 +1,6 @@
 
 
 Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", function($rootScope, $scope, rs) {
-  var primary_color_1 = "#76FFA6";
-  var primary_color_2 = "#82E1FF";
-  var secondary_color_1 = "#58BF7C";
-  var secondary_color_2 = "#62A9BF";
 
   $scope.decisions = [
     {
@@ -132,6 +128,11 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
 // Rendering
 Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
   
+  var primary_color_1 = "#229fd9";
+  var primary_color_2 = "#db2e1b";
+  var secondary_color_1 = "#1571a5";
+  var secondary_color_2 = "#b02113";
+
   var renderers = {
     "text": function(choice) {
       var fraction0 = (choice[0].chance * 10).toString() + "/10";
@@ -148,8 +149,8 @@ Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
       var width0 = choice[0].chance * 410;
       var width1 = choice[1].chance * 410;
       return '<svg width="100%" height="100%" viewBox="0 0 410 80"> \
-        <rect width="'+width0+'" height="20" x="0" y="0" fill="#8888ff" /> \
-        <rect width="'+width1+'" height="20" x="'+width0+'" y="0" fill="#88ff88" /> \
+        <rect width="'+width0+'" height="20" x="0" y="0" fill="'+primary_color_1+'" /> \
+        <rect width="'+width1+'" height="20" x="'+width0+'" y="0" fill="'+primary_color_2+'" /> \
         <text x="0" y="40"> \
           '+"$"+choice[0].payoff.toFixed(2)+'\
         </text> \
@@ -167,8 +168,8 @@ Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
       var textAnchor0 = width0 < 150 ? "start" : "end";
       var textAnchor1 = width1 < 150 ? "start" : "end";
       return '<svg width="100%" height="100%" viewBox="0 0 410 80"> \
-        <rect width="'+width0+'" height="40" x="0" y="0" fill="#8888ff" /> \
-        <rect width="'+width1+'" height="40" x="0" y="40" fill="#88ff88" /> \
+        <rect width="'+width0+'" height="40" x="0" y="0" fill="'+primary_color_1+'" /> \
+        <rect width="'+width1+'" height="40" x="0" y="40" fill="'+primary_color_2+'" /> \
         <text x="'+textX0+'" y="24" text-anchor="'+textAnchor0+'"> \
           '+choice[0].chance*100+"% chance of $"+choice[0].payoff.toFixed(2)+'\
         </text> \
@@ -185,8 +186,8 @@ Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
       var height0 = choice[0].payoff/4.0 * maxHeight;
       var height1 = choice[1].payoff/4.0 * maxHeight;
       return '<svg width="100%" height="100%" viewBox="0 0 410 80"> \
-        <rect width="'+width0+'" height="'+height0+'" x="0" y="'+(maxHeight-height0)+'" fill="#8888ff" /> \
-        <rect width="'+width1+'" height="'+height1+'" x="'+width0+'" y="'+(maxHeight-height1)+'" fill="#88ff88" /> \
+        <rect width="'+width0+'" height="'+height0+'" x="0" y="'+(maxHeight-height0)+'" fill="'+primary_color_1+'" /> \
+        <rect width="'+width1+'" height="'+height1+'" x="'+width0+'" y="'+(maxHeight-height1)+'" fill="'+primary_color_2+'" /> \
         <text x="0" y="'+(maxHeight+20)+'"> \
           '+"$"+choice[0].payoff.toFixed(2)+'\
         </text> \
@@ -215,15 +216,15 @@ Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
 
       // hacky, but can't see any other angulary way to do this
       if (scope.treatment === "pie") {
-        var colors = ["#8888ff", "#88ff88"];
+        var colors = [primary_color_1, primary_color_2];
         var context = $("canvas", element).get(0).getContext("2d");
         draw_pie(context, 50, 40, 40, choice, colors);
 
         // draw legend
-        context.fillStyle = "#8888ff";
+        context.fillStyle = colors[0];
         context.fillRect(120, 10, 20, 20);
 
-        context.fillStyle = "#88ff88";
+        context.fillStyle = colors[1];
         context.fillRect(120, 50, 20, 20);
 
         context.fillStyle = "#000000";
@@ -234,7 +235,7 @@ Redwood.directive("choiceView", ["RedwoodSubject", function(rs) {
       }
 
       if (scope.treatment === "pie-height") {
-        var colors = [["#8888ff", "#8888bb"], ["#88ff88", "#88bb88"]];
+        var colors = [[primary_color_1, secondary_color_1], [primary_color_2, secondary_color_2]];
         var context = $("canvas", element).get(0).getContext("2d");
         draw_pie_3d(context, 50, 0, 50, choice, colors);
       }
