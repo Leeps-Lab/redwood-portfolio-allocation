@@ -325,7 +325,6 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
         .attr("width", width)
         .attr("height", height);
       var plot = svg.append("g")
-        .attr("transform", "translate(0, " + -height / 2 + ")");
 
       var redrawPlot = function(marketValues, portfolioReturns) {
         if (marketValues && rs.is_realtime) {
@@ -356,32 +355,37 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
             }
           });*/
 
-          var scaleX = width / 252;
-          var scaleY = height / (scope.config.plotMaxY - scope.config.plotMinY);
-          console.log(scope.config.plotMaxY - scope.config.plotMinY);
-          console.log("dfsadfsadfs")
+          var xScale = d3.scale.linear()
+            .domain([0, scope.config.daysPerRound + 1])
+            .range([0, width]);
+          var yScale = d3.scale.linear()
+            .domain([scope.config.plotMinY, scope.config.plotMaxY])
+            .range([height, 0]);
+
           var line = d3.svg.line()
             .x(function(datum) {
-              return datum[0] * scaleX;
+              return xScale(datum[0]);
             })
             .y(function(datum) {
-              return (2.0 - datum[1]) * scaleY;
+              return yScale(datum[1]);
           });
 
-          var dataset = plot.selectAll("path").data(flotData);
+          var dataset = plot.selectAll(".series").data(flotData);
 
           dataset.enter()
             .append("path")
-            .attr("class", "derp");
+            .attr("class", "series")
+            .attr("stroke-width", 2)
+            .attr("fill", "none");
 
           dataset
+            .attr("stroke", function(series) {
+              return series.color;
+            })
             .datum(function(series) {
               return series.data;
             })
             .attr("d", line)
-            .attr("stroke", "#222222")
-            .attr("stroke-width", 1)
-            .attr("fill", "none");
 
           dataset.exit()
             .remove();
@@ -399,7 +403,37 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
       scope.$watch(function() {return scope.portfolioReturns}, function() {
         redrawPlot(scope.paPlot, scope.portfolioReturns);
       }, true);
+      scope.$watch(function() {return scope.config}, function() {
+        if (scope.config) {
+          var xScale = d3.scale.linear()
+            .domain([0, scope.config.daysPerRound + 1])
+            .range([0, width]);
+          var yScale = d3.scale.linear()
+            .domain([scope.config.plotMinY, scope.config.plotMaxY])
+            .range([height, 0]);
 
+          var xAxis = d3.svg.axis()
+          .scale(xScale)
+          .orient("top");
+          var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient("right");
+
+          plot.append("g")
+            .attr("stroke-width", 1)
+            .attr("fill", "none")
+            .attr("stroke", "#222222")
+            .attr("transform", "translate(0, " + height + ")")
+            .call(xAxis);
+
+          plot.append("g")
+            .attr("stroke-width", 1)
+            .attr("fill", "none")
+            .attr("stroke", "#222222")
+            .attr("transform", "translate(0, 0)")
+            .call(yAxis)
+        }
+      });
     }
   }
 }]);
