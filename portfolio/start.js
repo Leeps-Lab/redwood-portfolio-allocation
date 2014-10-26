@@ -252,13 +252,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
     var stockReturnValue = stockReturn * $scope.allocation.stock;
     var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
-    
-    /* Daily return over time */
-    /*var previousValue = getMarketValue(round, day - 1);
-    var stockReturn = value / previousValue;
-    var bondReturnValue = (($scope.config.bondReturn / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
-    var stockReturnValue = stockReturn * $scope.allocation.stock;
-    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;*/
 
     $scope.portfolioReturns[0].push([day, portfolioReturn]);
     // simulate the next day
@@ -356,7 +349,7 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
               return xScale(datum[0]);
             })
             .y(function(datum) {
-              return yScale(datum[1]);
+              return yScale(datum[1] - 1.0);
           });
 
           // plot market data
