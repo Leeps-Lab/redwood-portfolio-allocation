@@ -1,0 +1,35 @@
+
+.axis {
+    stroke-width: 1;
+    stroke: #00ff00;
+}
+
+/* The axis line itself */
+.axis path {
+    fill: none;
+    stroke-width: 1;
+    stroke: #222222;
+}
+
+/* The axis tick marks */
+.axis line {
+    fill: none;
+    stroke-width: 1;
+    stroke: #666666;
+}
+
+/* The axis tick text */
+.axis text {
+    stroke-width: 0;
+    stroke: #222222;
+}
+
+.plot-background {
+    fill: #444444;
+}
+
+/* The axis center tick mark */
+.center-tick line {
+    stroke-width: 2;
+    stroke: #888888;
+}

@@ -318,13 +318,25 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
     },
     link: function(scope, element, attrs) {
 
+      var xOffset = 30;
+      var yOffset = 25;
       var width = $(element).width();
       var height = $(element).height();
+      var plotWidth = width - xOffset;
+      var plotHeight = height - yOffset;
 
       var svg = d3.select(".pa-plot")
         .attr("width", width)
         .attr("height", height);
       var plot = svg.append("g")
+        .attr("transform", "translate(" + xOffset + ",0)")
+
+      plot.append("rect")
+        .classed("plot-background", true)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", plotWidth)
+        .attr("height", plotHeight);
 
       var redrawPlot = function(marketValues, portfolioReturns) {
         if (marketValues && rs.is_realtime) {
@@ -406,32 +418,41 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
       scope.$watch(function() {return scope.config}, function() {
         if (scope.config) {
           var xScale = d3.scale.linear()
-            .domain([0, scope.config.daysPerRound + 1])
-            .range([0, width]);
+            .domain([0, scope.config.daysPerRound-1])
+            .range([0, plotWidth]);
           var yScale = d3.scale.linear()
             .domain([scope.config.plotMinY, scope.config.plotMaxY])
-            .range([height, 0]);
+            .range([plotHeight, 0]);
 
           var xAxis = d3.svg.axis()
-          .scale(xScale)
-          .orient("top");
+            .ticks(5)
+            .tickSize(-plotHeight)
+            .scale(xScale)
+            .orient("bottom");
           var yAxis = d3.svg.axis()
+            .ticks(5)
+            .tickSize(-plotWidth)
             .scale(yScale)
-            .orient("right");
+            .orient("left");
 
-          plot.append("g")
-            .attr("stroke-width", 1)
-            .attr("fill", "none")
-            .attr("stroke", "#222222")
-            .attr("transform", "translate(0, " + height + ")")
+          svg.select("g.x.axis").remove();
+          svg.select("g.y.axis").remove();
+
+          svg.append("g")
+            .classed("x axis", true)
+            .attr("transform", "translate(" + xOffset + ", " + (plotHeight) + ")")
             .call(xAxis);
 
-          plot.append("g")
-            .attr("stroke-width", 1)
-            .attr("fill", "none")
-            .attr("stroke", "#222222")
-            .attr("transform", "translate(0, 0)")
+          svg.append("g")
+            .classed("y axis", true)
+            .attr("transform", "translate(" + xOffset + ",0)")
             .call(yAxis)
+
+          // 0th tick is more prominent
+          svg.selectAll("g.y.axis .tick").filter(function(d) {
+            console.log(d)
+            return d == 1;
+          }).classed("center-tick", true);
         }
       });
     }
