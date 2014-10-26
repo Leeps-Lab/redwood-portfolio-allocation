@@ -340,40 +340,17 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
 
       var redrawPlot = function(marketValues, portfolioReturns) {
         if (marketValues && rs.is_realtime) {
-          // convert raw data into formatted data series
-          var flotData = [];
-          for (var i = 0; i < marketValues.length; i++) {
-            flotData[i] = {
-              data: marketValues[i],
-              color: i == marketValues.length - 1 ? "#6666ff" : "#c8c8e0" 
-            };
-          }
-          for (var i = 0; i < portfolioReturns.length; i++) {
-            flotData.push({
-              data: portfolioReturns[i],
-              color: i == portfolioReturns.length - 1 ? "#66ff66" : "#c8e0c8"
-            });
-          }
 
-          // plot the data!
-          /*$.plot(element, flotData, {
-            xaxis: {
-              min: 0,
-              max: scope.config.daysPerRound + 1
-            },
-            yaxis: {
-              min: scope.config.plotMinY,
-              max: scope.config.plotMaxY
-            }
-          });*/
-
+          // set up scales
           var xScale = d3.scale.linear()
             .domain([0, scope.config.daysPerRound + 1])
             .range([0, width]);
+
           var yScale = d3.scale.linear()
             .domain([scope.config.plotMinY, scope.config.plotMaxY])
             .range([height, 0]);
 
+          // set up line function
           var line = d3.svg.line()
             .x(function(datum) {
               return xScale(datum[0]);
@@ -382,25 +359,29 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
               return yScale(datum[1]);
           });
 
-          var dataset = plot.selectAll(".series").data(flotData);
+          // plot market data
+          var marketData = plot.selectAll(".market").data(marketValues);
 
-          dataset.enter()
+          marketData.enter().append("path");
+
+          marketData
+            .attr("class", function(series, index) {
+              return index == marketValues.length - 1 ? "series market" : "series market market-old";
+            })
+            .attr("d", line);
+
+          marketData.exit().remove();
+
+          // plot portfolio data
+          var portfolioData = plot.selectAll(".portfolio").data(portfolioReturns);
+
+          portfolioData.enter()
             .append("path")
-            .attr("class", "series")
-            .attr("stroke-width", 2)
-            .attr("fill", "none");
+            .classed("series portfolio", true);
 
-          dataset
-            .attr("stroke", function(series) {
-              return series.color;
-            })
-            .datum(function(series) {
-              return series.data;
-            })
-            .attr("d", line)
+          portfolioData.attr("d", line);
 
-          dataset.exit()
-            .remove();
+          portfolioData.exit().remove();
 
           scope.needsRedraw = false;
         }
@@ -417,6 +398,7 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
       }, true);
       scope.$watch(function() {return scope.config}, function() {
         if (scope.config) {
+
           var xScale = d3.scale.linear()
             .domain([0, scope.config.daysPerRound-1])
             .range([0, plotWidth]);

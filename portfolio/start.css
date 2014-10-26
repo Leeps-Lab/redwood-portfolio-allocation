@@ -33,3 +33,24 @@
     stroke-width: 2;
     stroke: #888888;
 }
+
+/* all series */
+.series {
+    stroke-width: 2;
+    fill: none;
+}
+
+/* Market value series */
+.market {
+    stroke: #6666ff;
+}
+
+/* Previous Market value series */
+.market-old {
+    stroke: #707070;
+}
+
+/* Portfolio value series */
+.portfolio {
+    stroke: #66ff66;
+}
