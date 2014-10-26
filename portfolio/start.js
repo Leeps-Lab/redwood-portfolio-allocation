@@ -318,6 +318,15 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
     },
     link: function(scope, element, attrs) {
 
+      var width = $(element).width();
+      var height = $(element).height();
+
+      var svg = d3.select(".pa-plot")
+        .attr("width", width)
+        .attr("height", height);
+      var plot = svg.append("g")
+        .attr("transform", "translate(0, " + -height / 2 + ")");
+
       var redrawPlot = function(marketValues, portfolioReturns) {
         if (marketValues && rs.is_realtime) {
           // convert raw data into formatted data series
@@ -336,7 +345,7 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
           }
 
           // plot the data!
-          $.plot(element, flotData, {
+          /*$.plot(element, flotData, {
             xaxis: {
               min: 0,
               max: scope.config.daysPerRound + 1
@@ -345,7 +354,38 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
               min: scope.config.plotMinY,
               max: scope.config.plotMaxY
             }
+          });*/
+
+          var scaleX = width / 252;
+          var scaleY = height / (scope.config.plotMaxY - scope.config.plotMinY);
+          console.log(scope.config.plotMaxY - scope.config.plotMinY);
+          console.log("dfsadfsadfs")
+          var line = d3.svg.line()
+            .x(function(datum) {
+              return datum[0] * scaleX;
+            })
+            .y(function(datum) {
+              return (2.0 - datum[1]) * scaleY;
           });
+
+          var dataset = plot.selectAll("path").data(flotData);
+
+          dataset.enter()
+            .append("path")
+            .attr("class", "derp");
+
+          dataset
+            .datum(function(series) {
+              return series.data;
+            })
+            .attr("d", line)
+            .attr("stroke", "#222222")
+            .attr("stroke-width", 1)
+            .attr("fill", "none");
+
+          dataset.exit()
+            .remove();
+
           scope.needsRedraw = false;
         }
       }
