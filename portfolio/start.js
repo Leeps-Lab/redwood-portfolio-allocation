@@ -336,12 +336,12 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
 
           // set up scales
           var xScale = d3.scale.linear()
-            .domain([0, scope.config.daysPerRound + 1])
-            .range([0, width]);
+            .domain([0, scope.config.daysPerRound+1])
+            .range([0, plotWidth]);
 
           var yScale = d3.scale.linear()
             .domain([scope.config.plotMinY, scope.config.plotMaxY])
-            .range([height, 0]);
+            .range([plotHeight, 0]);
 
           // set up line function
           var line = d3.svg.line()
