@@ -101,18 +101,19 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.$watch(function() {return rs.is_realtime}, function(is_realtime) {
     if (is_realtime) {
-
-      if ($scope.isSimulating) {
-        // hack to get day simulation "timeout chain" to resume.
-        var lastSimulatedDay = $scope.marketValues[$scope.round].length - 1;
-        $timeout(simulateDay(lastSimulatedDay + 1), $scope.config.secondsPerDay * 1000);
-      } else {
-        // force the plot to redraw
-        console.log("forcing plot redraw");
-        $scope.plotNeedsRedraw = true;
-      }
+      deferUntilFinishedLoading(function() {
+        if ($scope.isSimulating) {
+          // The previous round simulation did not finish because the page was refreshed
+          // start simulating the current round
+          simulateDay(0, $scope.round, $scope.allocation, is_realtime)();
+        } else {
+          // force the plot to redraw
+          console.log("forcing plot redraw");
+          $scope.plotNeedsRedraw = true;
+        }
+      });
     }
-  })
+  });
 
   $scope.$watch("round", function(round) {
     $scope.actualRound = round + 1;
@@ -122,7 +123,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.confirmAllocation = function() {
     isSimulating = true; // too make sure controls are disabled
-    rs.trigger("startedRound", {
+    rs.trigger("roundStarted", {
       round: $scope.round,
       allocation: $scope.allocation
     });
@@ -157,37 +158,51 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     return $scope.allocation.bond * (1.0 + $scope.config.bondReturn);
   }
 
-  var simulateDay = function(day) {
+  var deferUntilFinishedLoading = function(deferred) {
+    if (typeof $scope.config.stochasticFunction.then === "function") {
+      console.log("deferring");
+      $scope.config.stochasticFunction.then(deferred);
+    } else {
+      console.log("calling now");
+      deferred();
+    }
+  }
+
+  var simulateDay = function(day, round, allocation, is_realtime) {
+    console.log(day + " " + round + " " + allocation + " " + is_realtime);
     return function() {
+
       if (day < $scope.config.daysPerRound) {
+        var value = $scope.config.stochasticFunction(day, round);
 
-        var triggerNextDay = function() {          
-          rs.trigger("simulatedDay", {
-            round: $scope.round,
-            day: day,
-            value: $scope.config.stochasticFunction(day, $scope.round)
-          });
-        };
+        // add today's market results to the stochastic series
+        $scope.marketValues[round].push([day, value]);
 
-        // wait for the stochastic function to load if necessary
-        // (If the stochastic function is a promise, then it hasn't loaded yet)
-        if (typeof $scope.config.stochasticFunction.then === "function") {
-          if (rs.is_realtime) {
-            $scope.config.stochasticFunction.then(triggerNextDay);
-          }
+        // Cumulative return over time
+        var stockReturn = value / $scope.marketValues[round][0][1];
+        var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
+        var stockReturnValue = stockReturn * $scope.allocation.stock;
+        var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
+
+        // add today's portfolio results to the portfolio series
+        $scope.portfolioReturns[0].push([day, portfolioReturn]);
+
+        // simulate the next day
+        if (is_realtime) {
+          $timeout(simulateDay(day + 1, round, allocation, is_realtime), $scope.config.secondsPerDay * 1000);
         } else {
-          triggerNextDay();
+          simulateDay(day + 1, round, allocation, is_realtime)();
         }
-
       } else {
         // compute round results
-        rs.trigger("roundEnded", {
-          round: $scope.round,
-          allocation: $scope.allocation,
-          returnFromBonds: currentBondReturn(),
-          returnFromStocks: currentStockReturn(),
-        });
-
+        if (is_realtime) {
+          rs.trigger("roundEnded", {
+            round: $scope.round,
+            allocation: $scope.allocation,
+            returnFromBonds: currentBondReturn(),
+            returnFromStocks: currentStockReturn(),
+          });
+        }
       }
     }
   };
@@ -230,70 +245,65 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   // Message Response Handlers
 
-  rs.on("startedRound", function(data) {
-    // for recovery
-    $scope.allocation = data.allocation;
+  rs.on("roundStarted", function(data) {
+    var is_realtime = rs.is_realtime;
 
-    $scope.marketValues.push([]);
-    $scope.portfolioReturns[0] = [];
-    $scope.isSimulating = true;
-    simulateDay(0)();
-  });
+    deferUntilFinishedLoading(function() {
+      $scope.allocation = data.allocation;
 
-  rs.on("simulatedDay", function(data) {
-    var round = data.round;
-    var day = data.day;
-    var value = data.value;
-    // add today's results to the stochastic series
-    $scope.marketValues[round].push([day, value]);
+      $scope.marketValues.push([]);
+      $scope.portfolioReturns[0] = [];
+      $scope.isSimulating = true;
 
-    // Cumulative return over time
-    var stockReturn = value / $scope.marketValues[round][0][1];
-    var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
-    var stockReturnValue = stockReturn * $scope.allocation.stock;
-    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
-
-    $scope.portfolioReturns[0].push([day, portfolioReturn]);
-    // simulate the next day
-    if (rs.is_realtime) {
-      $timeout(simulateDay(day + 1), $scope.config.secondsPerDay * 1000);
-    }
+      if (is_realtime) {
+        // if this is a sync message, dont simulate this round
+        simulateDay(0, data.round, data.allocation, is_realtime)();
+      }
+    });
   });
 
   rs.on("roundEnded", function(data) {
+    var is_realtime = rs.is_realtime;
+    deferUntilFinishedLoading(function() {
 
-    var marketReturnPercentage = marketReturnPercentageForRound(data.round);
-    
-    var totalReturn = data.returnFromStocks + data.returnFromBonds;
-    var realizedReturnPercentage = (totalReturn / $scope.config.wealthPerRound) - 1.0;
+      if (!is_realtime) {
+        // if this is a sync message, recover the simulation for this round
+        simulateDay(0, data.round, data.allocation, is_realtime)();
+      }
 
-    // add entry to round results
-    $scope.roundResults.push({
-      allocation: data.allocation,
-      marketReturn: marketReturnPercentage,
-      realizedReturn: realizedReturnPercentage,
+      var marketReturnPercentage = marketReturnPercentageForRound(data.round);
+      
+      var totalReturn = data.returnFromStocks + data.returnFromBonds;
+      var realizedReturnPercentage = (totalReturn / $scope.config.wealthPerRound) - 1.0;
+
+      // add entry to round results
+      $scope.roundResults.push({
+        allocation: data.allocation,
+        marketReturn: marketReturnPercentage,
+        realizedReturn: realizedReturnPercentage,
+      });
+
+      // MONEY IN THE BANK
+      $scope.bank += totalReturn - $scope.config.wealthPerRound;
+
+      // if the subject is broke, end this guy's whole career
+      if ($scope.bank <= $scope.config.minimumWealth) {
+        $scope.bank = $scope.config.minimumWealth;
+        rs.set_points($scope.bank);
+        rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
+        rs.next_period(5);
+      }
+
+      $scope.round = data.round + 1;
+      $scope.isSimulating = false;
+
+      // if all rounds are finished, finish it up
+      if ($scope.round >= $scope.config.rounds) {
+        rs.set_points($scope.bank);
+        rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
+        rs.next_period(5);
+      }
     });
-
-    // MONEY IN THE BANK
-    $scope.bank += totalReturn - $scope.config.wealthPerRound;
-
-    // if the subject is broke, end this guy's whole career
-    if ($scope.bank <= $scope.config.minimumWealth) {
-      $scope.bank = $scope.config.minimumWealth;
-      rs.set_points($scope.bank);
-      rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
-      rs.next_period(5);
-    }
-
-    $scope.round = data.round + 1;
-    $scope.isSimulating = false;
-
-    // if all rounds are finished, finish it up
-    if ($scope.round >= $scope.config.rounds) {
-      rs.set_points($scope.bank);
-      rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
-      rs.next_period(5);
-    }
   });
 
 }]);
