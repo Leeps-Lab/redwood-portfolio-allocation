@@ -88,24 +88,11 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // [[[0, val], [1, val], [day, val], ...], [values for round], ...]
   // $scope.marketValues[i] is sequence of stochastic values for round i
   $scope.marketValues = [];
+  $scope.currentMarketValues = [];
   $scope.preSimulatedValues = [];
-
-  $scope.portfolioReturns = [[]]; // only one needs to show at a time
+  $scope.portfolioValues = [];
 
   // some nice functions
-  var getMarketValue = function(round, day) {
-    if (day < 0) return 1.0;
-    return $scope.marketValues[round][day][1];
-  }
-
-  var firstMarketValueForRound = function(round) {
-    return getMarketValue(round, 0);
-  }
-
-  var lastMarketValueForRound = function(round) {
-    return getMarketValue(round, $scope.config.daysPerRound - 1);
-  }
-
   var marketReturnPercentageForRound = function(round) {
     var valuesForRound = $scope.marketValues[round];
     var lastIndex = valuesForRound.length - 1;
@@ -113,7 +100,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   }
 
   var currentStockReturn = function() {
-    return $scope.allocation.stock * lastMarketValueForRound($scope.round);
+    return $scope.allocation.stock * $scope.currentMarketValues[$scope.config.daysPerRound - 1][1];
   }
 
   var currentBondReturn = function() {
@@ -174,16 +161,17 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var value = $scope.config.stochasticFunction(day, round);
 
     // add today's market results to the stochastic series
-    $scope.marketValues[round].push([day, value]);
+    //$scope.marketValues[round].push([day, value]);
+    $scope.currentMarketValues.push([day, value]);
 
     // Cumulative return over time
-    var stockReturn = value / $scope.marketValues[round][0][1];
+    var stockReturn = value / $scope.currentMarketValues[0][1];
     var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
     var stockReturnValue = stockReturn * $scope.allocation.stock;
     var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
 
     // add today's portfolio results to the portfolio series
-    $scope.portfolioReturns[0].push([day, portfolioReturn]);
+    $scope.portfolioValues.push([day, portfolioReturn]);
   };
 
   var simulateRoundRealtime = function(round, allocation) {
@@ -274,8 +262,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       $scope.statusMessage = "Simulating round...";
       $scope.allocation = data.allocation;
 
-      $scope.marketValues.push([]);
-      $scope.portfolioReturns[0] = [];
+      //$scope.marketValues.push([]);
+      $scope.currentMarketValues = [];
+      $scope.portfolioValues = [];
       $scope.isSimulating = true;
 
       // if this is a sync message, don't simulate this round
@@ -292,6 +281,8 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       if (!is_realtime) {
         simulateRoundSync(data.round, data.allocation);
       }
+      
+      $scope.marketValues.push($scope.currentMarketValues);
 
       $scope.statusMessage = "";
       var marketReturnPercentage = marketReturnPercentageForRound(data.round);
@@ -340,9 +331,10 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
-      paPlot: "=", // The set of sequences of market values
+      marketValues: "=", // The set of sequences of market values
+      currentMarketValues: "=", // The current sequence of market values
       preSimulatedValues: "=", // The set of sequences of existing market values
-      portfolioReturns: "=", // The set of sequences of total portfolio return
+      portfolioValues: "=", // The current sequence of total portfolio return
       config: "=", // the experiment configuration
       needsRedraw: "=", // when set, the directive will attempt to redraw the plot
     },
@@ -372,33 +364,52 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
         .attr("height", plotHeight);
 
       var redrawMarketValues = function() {
-        if (scope.paPlot && rs.is_realtime) {
+        if (scope.marketValues && rs.is_realtime) {
           // plot market data
-          var data = plot.selectAll(".market").data(scope.paPlot);
-          data.enter().append("path");
+          var data = plot.selectAll(".market-old").data(scope.marketValues);
+          data.enter()
+            .append("path")
+            .classed("series market-old", true);
           data
-            .attr("class", function(series, index) {
-              return index == scope.paPlot.length - 1 ? "series market" : "series market market-old";
-            })
             .attr("d", lineFunction);
           data.exit().remove();
         }
       }
 
-      var redrawPortfolioValues = function() {
-        if (scope.paPlot && rs.is_realtime) {
+      redrawCurrentMarketValues = function() {
+        if (scope.marketValues && rs.is_realtime) {
           // plot portfolio data
-          var data = plot.selectAll(".portfolio").data(scope.portfolioReturns);
-          data.enter()
-            .append("path")
-            .classed("series portfolio", true);
-          data.attr("d", lineFunction);
-          data.exit().remove();
+          var path = plot.select(".market");
+          if (path.empty()) {
+            plot.append("path")
+              .datum(scope.currentMarketValues)
+              .classed("series market", true)
+              .attr("d", lineFunction);
+          } else {
+            path.datum(scope.currentMarketValues)
+              .attr("d", lineFunction);
+          }
+        }
+      }
+
+      var redrawPortfolioValues = function() {
+        if (scope.marketValues && rs.is_realtime) {
+          // plot portfolio data
+          var path = plot.select(".portfolio");
+          if (path.empty()) {
+            plot.append("path")
+              .datum(scope.portfolioValues)
+              .classed("series portfolio", true)
+              .attr("d", lineFunction);
+          } else {
+            path.datum(scope.portfolioValues)
+              .attr("d", lineFunction);
+          }
         }
       }
 
       var redrawPreSimulatedValues = function() {
-        if (scope.paPlot && rs.is_realtime) {
+        if (scope.marketValues && rs.is_realtime) {
           // plot existing market data
           var data = plot.selectAll(".market-existing").data(scope.preSimulatedValues);
           data.enter()
@@ -411,16 +422,24 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
 
       scope.$watch(function() {return scope.needsRedraw}, function() {
         redrawMarketValues();
+        redrawCurrentMarketValues();
         redrawPortfolioValues();
         redrawPreSimulatedValues();
         scope.needsRedraw = false;
       });
       
-      scope.$watch(function() {return scope.paPlot}, function() {
+      scope.$watch(function() {return scope.marketValues}, function() {
         redrawMarketValues();
+        // hack to make sure that the current market value stays on top
+        d3.select(".market").remove();
+        redrawCurrentMarketValues();
+      }, true);
+
+      scope.$watch(function() {return scope.currentMarketValues}, function() {
+        redrawCurrentMarketValues();
       }, true);
       
-      scope.$watch(function() {return scope.portfolioReturns}, function() {
+      scope.$watch(function() {return scope.portfolioValues}, function() {
         redrawPortfolioValues();
       }, true);
       
