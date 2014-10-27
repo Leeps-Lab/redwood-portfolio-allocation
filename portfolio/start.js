@@ -248,7 +248,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
             $scope.preSimulatedValues[round].push([day, value]);
           }
         }
-        $scope.plotNeedsRedraw = true;
 
         // Swizzle $scope.config.stochasticFunction with a new function
         // to make up for the pre-simulated rounds
@@ -312,7 +311,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       if (!data.isPracticeRound) {
         $scope.bank += totalReturn - $scope.config.wealthPerRound;
       }
-      
+
       // if the subject is broke, end this guy's whole career
       if ($scope.bank <= $scope.config.minimumWealth) {
         $scope.bank = $scope.config.minimumWealth;
@@ -355,6 +354,9 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
       var height = $(element).height();
       var plotWidth = width - xOffset;
       var plotHeight = height - yOffset;
+      var xScale;
+      var yScale;
+      var lineFunction;
 
       var svg = d3.select(".pa-plot")
         .attr("width", width)
@@ -369,75 +371,80 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
         .attr("width", plotWidth)
         .attr("height", plotHeight);
 
-      var redrawPlot = function(marketValues, portfolioReturns) {
-        if (marketValues && rs.is_realtime) {
+      var redrawMarketValues = function() {
+        if (scope.paPlot && rs.is_realtime) {
+          // plot market data
+          var data = plot.selectAll(".market").data(scope.paPlot);
+          data.enter().append("path");
+          data
+            .attr("class", function(series, index) {
+              return index == scope.paPlot.length - 1 ? "series market" : "series market market-old";
+            })
+            .attr("d", lineFunction);
+          data.exit().remove();
+        }
+      }
 
-          // set up scales
-          var xScale = d3.scale.linear()
-            .domain([0, scope.config.daysPerRound+1])
+      var redrawPortfolioValues = function() {
+        if (scope.paPlot && rs.is_realtime) {
+          // plot portfolio data
+          var data = plot.selectAll(".portfolio").data(scope.portfolioReturns);
+          data.enter()
+            .append("path")
+            .classed("series portfolio", true);
+          data.attr("d", lineFunction);
+          data.exit().remove();
+        }
+      }
+
+      var redrawPreSimulatedValues = function() {
+        if (scope.paPlot && rs.is_realtime) {
+          // plot existing market data
+          var data = plot.selectAll(".market-existing").data(scope.preSimulatedValues);
+          data.enter()
+            .append("path")
+            .attr("class", "series market-existing")
+          data.attr("d", lineFunction);
+          data.exit().remove();
+        }
+      }
+
+      scope.$watch(function() {return scope.needsRedraw}, function() {
+        redrawMarketValues();
+        redrawPortfolioValues();
+        redrawPreSimulatedValues();
+        scope.needsRedraw = false;
+      });
+      
+      scope.$watch(function() {return scope.paPlot}, function() {
+        redrawMarketValues();
+      }, true);
+      
+      scope.$watch(function() {return scope.portfolioReturns}, function() {
+        redrawPortfolioValues();
+      }, true);
+      
+      scope.$watch(function() {return scope.preSimulatedValues}, function() {
+        redrawPreSimulatedValues();
+      }, true);
+
+      scope.$watch(function() {return scope.config}, function() {
+        if (scope.config) {
+
+          xScale = d3.scale.linear()
+            .domain([0, scope.config.daysPerRound-1])
             .range([0, plotWidth]);
-
-          var yScale = d3.scale.linear()
+          yScale = d3.scale.linear()
             .domain([scope.config.plotMinY, scope.config.plotMaxY])
             .range([plotHeight, 0]);
 
-          // set up line function
-          var line = d3.svg.line()
+          lineFunction = d3.svg.line()
             .x(function(datum) {
               return xScale(datum[0]);
             })
             .y(function(datum) {
               return yScale(datum[1] - 1.0);
           });
-
-          // plot existing market data
-          var preSimulatedData = plot.selectAll(".market-existing").data(scope.preSimulatedValues);
-          preSimulatedData.enter()
-            .append("path")
-            .attr("class", "series market-existing")
-          preSimulatedData.attr("d", line);
-          preSimulatedData.exit().remove();
-
-          // plot market data
-          var marketData = plot.selectAll(".market").data(marketValues);
-          marketData.enter().append("path");
-          marketData
-            .attr("class", function(series, index) {
-              return index == marketValues.length - 1 ? "series market" : "series market market-old";
-            })
-            .attr("d", line);
-          marketData.exit().remove();
-
-          // plot portfolio data
-          var portfolioData = plot.selectAll(".portfolio").data(portfolioReturns);
-          portfolioData.enter()
-            .append("path")
-            .classed("series portfolio", true);
-          portfolioData.attr("d", line);
-          portfolioData.exit().remove();
-
-          scope.needsRedraw = false;
-        }
-      }
-
-      scope.$watch(function() {return scope.needsRedraw}, function() {
-        redrawPlot(scope.paPlot, scope.portfolioReturns);
-      });
-      scope.$watch(function() {return scope.paPlot}, function() {
-        redrawPlot(scope.paPlot, scope.portfolioReturns);
-      }, true);
-      scope.$watch(function() {return scope.portfolioReturns}, function() {
-        redrawPlot(scope.paPlot, scope.portfolioReturns);
-      }, true);
-      scope.$watch(function() {return scope.config}, function() {
-        if (scope.config) {
-
-          var xScale = d3.scale.linear()
-            .domain([0, scope.config.daysPerRound-1])
-            .range([0, plotWidth]);
-          var yScale = d3.scale.linear()
-            .domain([scope.config.plotMinY, scope.config.plotMaxY])
-            .range([plotHeight, 0]);
 
           var xAxis = d3.svg.axis()
             .ticks(5)

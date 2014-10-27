@@ -42,20 +42,22 @@
 
 /* Market value series */
 .market {
-    stroke: #6666ff;
+    stroke: #7777ff;
 }
 
 /* Previous Market value series */
 .market-old {
+    stroke-width: 1;
     stroke: #707070;
 }
 
 /* Existing Market value series */
 .market-existing {
+    stroke-width: 1;
     stroke: #707070;
 }
 
 /* Portfolio value series */
 .portfolio {
-    stroke: #66ff66;
+    stroke: #77ff77;
 }
