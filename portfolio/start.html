@@ -24,7 +24,7 @@
             <th>Market</th>
             <th>Realized</th>
           </tr>
-          <tr ng-repeat="result in roundResults" ng-class="{danger: result.realized < 0}">
+          <tr ng-repeat="result in roundResults" ng-class="{info: result.isPracticeResult}">
             <td>{{result.allocation.stock | number: 2}}</td>
             <td>{{result.allocation.bond | number: 2}}</td>
             <td>{{result.marketReturn * 100 | number: 0}}%</td>

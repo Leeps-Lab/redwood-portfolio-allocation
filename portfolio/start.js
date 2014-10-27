@@ -198,6 +198,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
             allocation: $scope.allocation,
             returnFromBonds: currentBondReturn(),
             returnFromStocks: currentStockReturn(),
+            isPracticeRound: round < $scope.config.practiceRounds
           });
         }
       }
@@ -304,11 +305,14 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
         allocation: data.allocation,
         marketReturn: marketReturnPercentage,
         realizedReturn: realizedReturnPercentage,
+        isPracticeResult: data.isPracticeRound
       });
 
       // MONEY IN THE BANK
-      $scope.bank += totalReturn - $scope.config.wealthPerRound;
-
+      if (!data.isPracticeRound) {
+        $scope.bank += totalReturn - $scope.config.wealthPerRound;
+      }
+      
       // if the subject is broke, end this guy's whole career
       if ($scope.bank <= $scope.config.minimumWealth) {
         $scope.bank = $scope.config.minimumWealth;
