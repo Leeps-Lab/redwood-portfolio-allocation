@@ -50,6 +50,11 @@
     stroke: #707070;
 }
 
+/* Existing Market value series */
+.market-existing {
+    stroke: #707070;
+}
+
 /* Portfolio value series */
 .portfolio {
     stroke: #66ff66;

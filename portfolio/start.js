@@ -88,6 +88,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // [[[0, val], [1, val], [day, val], ...], [values for round], ...]
   // $scope.marketValues[i] is sequence of stochastic values for round i
   $scope.marketValues = [];
+  $scope.preSimulatedValues = [];
 
   $scope.portfolioReturns = [[]]; // only one needs to show at a time
 
@@ -215,15 +216,17 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   rs.on_load(function() {
     // Load configuration
     $scope.config = {
-      rounds: rs.config.rounds                 || 20,
-      daysPerRound: rs.config.daysPerRound     || 252,
-      secondsPerDay: rs.config.secondsPerDay   || 0.01,
-      startingWealth: rs.config.startingWealth || 1000,
-      wealthPerRound: rs.config.wealthPerRound || 1000,
-      minimumWealth: rs.config.minimumWealth   || 200,
-      bondReturn: rs.config.bondReturn         || 0.2,
-      plotMinY: rs.config.plotMinY             || 0.0,
-      plotMaxY: rs.config.plotMaxY             || 2.0,
+      rounds: rs.config.rounds                         || 20,
+      preSimulatedRounds: rs.config.preSimulatedRounds || 5,
+      practiceRounds: rs.config.practiceRounds         || 5,
+      daysPerRound: rs.config.daysPerRound             || 252,
+      secondsPerDay: rs.config.secondsPerDay           || 0.01,
+      startingWealth: rs.config.startingWealth         || 1000,
+      wealthPerRound: rs.config.wealthPerRound         || 1000,
+      minimumWealth: rs.config.minimumWealth           || 200,
+      bondReturn: rs.config.bondReturn                 || 0.2,
+      plotMinY: rs.config.plotMinY                     || 0.0,
+      plotMaxY: rs.config.plotMaxY                     || 2.0,
       stochasticFunction: null,
     };
 
@@ -234,7 +237,23 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     $scope.config.stochasticFunction = experiment.createStochasticFunction(rs.config.stochasticFunction)
       .then(function(stochasticFunction) {
         $scope.isLoadingStochasticSeries = false;
-        $scope.config.stochasticFunction = stochasticFunction;
+
+        // Add specified number of "previous" market series,
+        for (var round = 0; round < $scope.config.preSimulatedRounds; round++) {
+          $scope.preSimulatedValues.push([]);
+
+          for (var day = 0; day < $scope.config.daysPerRound; day++) {
+            var value = stochasticFunction(day, round);
+            $scope.preSimulatedValues[round].push([day, value]);
+          }
+        }
+        $scope.plotNeedsRedraw = true;
+
+        // Swizzle $scope.config.stochasticFunction with a new function
+        // to make up for the pre-simulated rounds
+        $scope.config.stochasticFunction = function(day, round) {
+          return stochasticFunction(day, $scope.config.preSimulatedRounds + round);
+        };
       });
 
     $scope.allocation = {
@@ -319,6 +338,7 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
       paPlot: "=", // The set of sequences of market values
+      preSimulatedValues: "=", // The set of sequences of existing market values
       portfolioReturns: "=", // The set of sequences of total portfolio return
       config: "=", // the experiment configuration
       needsRedraw: "=", // when set, the directive will attempt to redraw the plot
@@ -366,28 +386,30 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
               return yScale(datum[1] - 1.0);
           });
 
+          // plot existing market data
+          var preSimulatedData = plot.selectAll(".market-existing").data(scope.preSimulatedValues);
+          preSimulatedData.enter()
+            .append("path")
+            .attr("class", "series market-existing")
+          preSimulatedData.attr("d", line);
+          preSimulatedData.exit().remove();
+
           // plot market data
           var marketData = plot.selectAll(".market").data(marketValues);
-
           marketData.enter().append("path");
-
           marketData
             .attr("class", function(series, index) {
               return index == marketValues.length - 1 ? "series market" : "series market market-old";
             })
             .attr("d", line);
-
           marketData.exit().remove();
 
           // plot portfolio data
           var portfolioData = plot.selectAll(".portfolio").data(portfolioReturns);
-
           portfolioData.enter()
             .append("path")
             .classed("series portfolio", true);
-
           portfolioData.attr("d", line);
-
           portfolioData.exit().remove();
 
           scope.needsRedraw = false;
