@@ -30,7 +30,11 @@
     </div>
     <div class="row" style="margin-top: 40px">
       <div class="col-md-8">
-        <p>Starting Wealth: {{config.wealthPerRound}}</p>
+        <div class="row">
+          <div class="col-md-12">
+            <p>Starting Wealth: {{config.wealthPerRound}}</p>
+          </div>
+        </div>
         <div class="row" style="margin-bottom: 20px">
           <div class="col-md-3">
             <div class="input-group">
@@ -52,9 +56,14 @@
             </div>
           </div>
         </div>
-        <button class="btn btn-success" ng-click="confirmAllocation()" ng-disabled="isSimulating||isLoadingStochasticSeries">
-          Confirm Allocation
-        </button>
+        <div class="row">
+          <div class="col-md-12">
+            <button class="btn btn-success" ng-click="confirmAllocation()" ng-disabled="isSimulating||isLoadingStochasticSeries">
+              Confirm Allocation
+            </button>
+            <p class="pull-right">{{statusMessage}}</p>
+          </div>
+        </div>
       </div>
       <div class="col-md-4">
         <table class="table table-bordered">

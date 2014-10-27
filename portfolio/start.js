@@ -81,6 +81,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.round = 0;
   $scope.actualRound = 1;
+  $scope.statusMessage = "";
   $scope.roundResults = [];
 
   // stores computed stochastic values like so:
@@ -90,46 +91,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   $scope.portfolioReturns = [[]]; // only one needs to show at a time
 
-  // Setup scope variable bindings
-
-  $scope.$watch("allocation.stock", function() {
-    $scope.allocation.bond = $scope.config.wealthPerRound - $scope.allocation.stock;
-  });
-  $scope.$watch("allocation.bond", function() {
-    $scope.allocation.stock = $scope.config.wealthPerRound - $scope.allocation.bond;
-  });
-
-  $scope.$watch(function() {return rs.is_realtime}, function(is_realtime) {
-    if (is_realtime) {
-      deferUntilFinishedLoading(function() {
-        if ($scope.isSimulating) {
-          // The previous round simulation did not finish because the page was refreshed
-          simulateRoundRealtime($scope.round, $scope.allocation);
-        } else {
-          // force the plot to redraw
-          console.log("forcing plot redraw");
-          $scope.plotNeedsRedraw = true;
-        }
-      });
-    }
-  });
-
-  $scope.$watch("round", function(round) {
-    $scope.actualRound = round + 1;
-  });
-
-  // Setup scope functions
-
-  $scope.confirmAllocation = function() {
-    isSimulating = true; // to make sure controls are disabled
-    rs.trigger("roundStarted", {
-      round: $scope.round,
-      allocation: $scope.allocation
-    });
-  };
-
-  // Other functions
-
+  // some nice functions
   var getMarketValue = function(round, day) {
     if (day < 0) return 1.0;
     return $scope.marketValues[round][day][1];
@@ -159,13 +121,53 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
   var deferUntilFinishedLoading = function(deferred) {
     if ($scope.isLoadingStochasticSeries) {
-      console.log("deferring");
       $scope.config.stochasticFunction.then(deferred);
     } else {
-      console.log("calling now");
       deferred();
     }
   }
+
+  // Setup scope variable bindings
+
+  $scope.$watch("allocation.stock", function() {
+    $scope.allocation.bond = $scope.config.wealthPerRound - $scope.allocation.stock;
+  });
+  $scope.$watch("allocation.bond", function() {
+    $scope.allocation.stock = $scope.config.wealthPerRound - $scope.allocation.bond;
+  });
+
+  $scope.$watch(function() {return rs.is_realtime}, function(is_realtime) {
+    if (is_realtime) {
+      deferUntilFinishedLoading(function() {
+        if ($scope.isSimulating) {
+          // The previous round simulation did not finish because the page was refreshed
+          simulateRoundRealtime($scope.round, $scope.allocation);
+        } else {
+          // force the plot to redraw
+          $scope.plotNeedsRedraw = true;
+        }
+      });
+    }
+  });
+
+  $scope.$watch("round", function(round) {
+    $scope.actualRound = round + 1;
+  });
+
+  // Setup scope functions
+
+  $scope.confirmAllocation = function() {
+    $scope.isSimulating = true; // make sure controls are disabled
+    $scope.statusMessage = "Waiting for other subjects...";
+    rs.synchronizationBarrier("confirm_" + $scope.round).then(function() {
+      rs.trigger("roundStarted", {
+        round: $scope.round,
+        allocation: $scope.allocation
+      });
+    });
+  };
+
+  // Other functions
 
   var simulateDay = function(day, round, allocation) {
     var value = $scope.config.stochasticFunction(day, round);
@@ -250,6 +252,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var is_realtime = rs.is_realtime;
 
     deferUntilFinishedLoading(function() {
+      $scope.statusMessage = "Simulating round...";
       $scope.allocation = data.allocation;
 
       $scope.marketValues.push([]);
@@ -266,12 +269,12 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   rs.on("roundEnded", function(data) {
     var is_realtime = rs.is_realtime;
     deferUntilFinishedLoading(function() {
-
       // if this is a sync message, recover the simulation for this round
       if (!is_realtime) {
         simulateRoundSync(data.round, data.allocation);
       }
 
+      $scope.statusMessage = "";
       var marketReturnPercentage = marketReturnPercentageForRound(data.round);
       
       var totalReturn = data.returnFromStocks + data.returnFromBonds;
