@@ -104,8 +104,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       deferUntilFinishedLoading(function() {
         if ($scope.isSimulating) {
           // The previous round simulation did not finish because the page was refreshed
-          // start simulating the current round
-          simulateDay(0, $scope.round, $scope.allocation, is_realtime)();
+          simulateRoundRealtime($scope.round, $scope.allocation);
         } else {
           // force the plot to redraw
           console.log("forcing plot redraw");
@@ -122,7 +121,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   // Setup scope functions
 
   $scope.confirmAllocation = function() {
-    isSimulating = true; // too make sure controls are disabled
+    isSimulating = true; // to make sure controls are disabled
     rs.trigger("roundStarted", {
       round: $scope.round,
       allocation: $scope.allocation
@@ -159,7 +158,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
   }
 
   var deferUntilFinishedLoading = function(deferred) {
-    if (typeof $scope.config.stochasticFunction.then === "function") {
+    if ($scope.isLoadingStochasticSeries) {
       console.log("deferring");
       $scope.config.stochasticFunction.then(deferred);
     } else {
@@ -168,34 +167,29 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     }
   }
 
-  var simulateDay = function(day, round, allocation, is_realtime) {
-    console.log(day + " " + round + " " + allocation + " " + is_realtime);
-    return function() {
+  var simulateDay = function(day, round, allocation) {
+    var value = $scope.config.stochasticFunction(day, round);
 
-      if (day < $scope.config.daysPerRound) {
-        var value = $scope.config.stochasticFunction(day, round);
+    // add today's market results to the stochastic series
+    $scope.marketValues[round].push([day, value]);
 
-        // add today's market results to the stochastic series
-        $scope.marketValues[round].push([day, value]);
+    // Cumulative return over time
+    var stockReturn = value / $scope.marketValues[round][0][1];
+    var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
+    var stockReturnValue = stockReturn * $scope.allocation.stock;
+    var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
 
-        // Cumulative return over time
-        var stockReturn = value / $scope.marketValues[round][0][1];
-        var bondReturnValue = (($scope.config.bondReturn * (day + 1) / $scope.config.daysPerRound) + 1.0) * $scope.allocation.bond;
-        var stockReturnValue = stockReturn * $scope.allocation.stock;
-        var portfolioReturn = (bondReturnValue + stockReturnValue) / $scope.config.startingWealth;
+    // add today's portfolio results to the portfolio series
+    $scope.portfolioReturns[0].push([day, portfolioReturn]);
+  };
 
-        // add today's portfolio results to the portfolio series
-        $scope.portfolioReturns[0].push([day, portfolioReturn]);
-
-        // simulate the next day
-        if (is_realtime) {
-          $timeout(simulateDay(day + 1, round, allocation, is_realtime), $scope.config.secondsPerDay * 1000);
+  var simulateRoundRealtime = function(round, allocation) {
+    var simulatorForDay = function(day) {
+      return function() {
+        if (day < $scope.config.daysPerRound) {
+          simulateDay(day, round, allocation);
+          $timeout(simulatorForDay(day + 1), $scope.config.secondsPerDay * 1000);
         } else {
-          simulateDay(day + 1, round, allocation, is_realtime)();
-        }
-      } else {
-        // compute round results
-        if (is_realtime) {
           rs.trigger("roundEnded", {
             round: $scope.round,
             allocation: $scope.allocation,
@@ -204,6 +198,13 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
           });
         }
       }
+    };
+    simulatorForDay(0)();
+  };
+
+  var simulateRoundSync = function(round, allocation) {
+    for (var day = 0; day < $scope.config.daysPerRound; day++) {
+      simulateDay(day, round, allocation);
     }
   };
 
@@ -255,9 +256,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       $scope.portfolioReturns[0] = [];
       $scope.isSimulating = true;
 
+      // if this is a sync message, don't simulate this round
       if (is_realtime) {
-        // if this is a sync message, dont simulate this round
-        simulateDay(0, data.round, data.allocation, is_realtime)();
+        simulateRoundRealtime(data.round, data.allocation);
       }
     });
   });
@@ -266,9 +267,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
     var is_realtime = rs.is_realtime;
     deferUntilFinishedLoading(function() {
 
+      // if this is a sync message, recover the simulation for this round
       if (!is_realtime) {
-        // if this is a sync message, recover the simulation for this round
-        simulateDay(0, data.round, data.allocation, is_realtime)();
+        simulateRoundSync(data.round, data.allocation);
       }
 
       var marketReturnPercentage = marketReturnPercentageForRound(data.round);
