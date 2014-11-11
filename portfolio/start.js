@@ -281,6 +281,9 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       if (!is_realtime) {
         simulateRoundSync(data.round, data.allocation);
       }
+
+      // set result data
+      rs.set("results", data);
       
       $scope.marketValues.push($scope.currentMarketValues);
 
@@ -306,8 +309,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
       // if the subject is broke, end this guy's whole career
       if ($scope.bank <= $scope.config.minimumWealth) {
         $scope.bank = $scope.config.minimumWealth;
-        rs.set_points($scope.bank);
-        rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
         rs.next_period(5);
       }
 
@@ -316,8 +317,6 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
 
       // if all rounds are finished, finish it up
       if ($scope.round >= $scope.config.rounds) {
-        rs.set_points($scope.bank);
-        rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
         rs.next_period(5);
         $scope.statusMessage = "Experiment completed. Loading payouts...";
         $scope.isSimulating = true;
