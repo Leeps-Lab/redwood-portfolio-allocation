@@ -319,6 +319,8 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "Port
         rs.set_points($scope.bank);
         rs.send("__set_conversion_rate__", {conversion_rate: 0.01});
         rs.next_period(5);
+        $scope.statusMessage = "Experiment completed. Loading payouts...";
+        $scope.isSimulating = true;
       }
     });
   });
