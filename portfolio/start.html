@@ -5,20 +5,62 @@
   <div class="container">
     <div class="row">
       <div class="col-md-8">
-        <div pa-plot
-             market-values="marketValues"
-             current-market-values="currentMarketValues"
-             portfolio-values="portfolioValues"
-             pre-simulated-values="preSimulatedValues"
-             config="config"
-             needs-redraw="plotNeedsRedraw"
-             style="width: 100%; height: 400px;">
-          <svg width="120" height="120" class="pa-plot">
+        <div class="row">
+          <div class="col-md-12">
+            <div pa-plot
+                 market-values="marketValues"
+                 current-market-values="currentMarketValues"
+                 portfolio-values="portfolioValues"
+                 pre-simulated-values="preSimulatedValues"
+                 config="config"
+                 needs-redraw="plotNeedsRedraw"
+                 style="width: 100%; height: 400px;">
+              <svg width="120" height="120" class="pa-plot">
 
-          </svg>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 40px">
+          <div class="col-md-12">
+            <div class="row">
+              <div class="col-md-12">
+                <p>Starting Wealth: {{config.wealthPerRound}}</p>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom: 20px">
+              <div class="col-md-3">
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    Stocks
+                  </span>
+                  <input pa-percentage class="form-control" type="text" ng-model="allocation.stock" max="config.wealthPerRound" ng-disabled="isSimulating">
+                </div>
+              </div>
+              <div class="col-md-5">
+                <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{config.wealthPerRound}}" ng-disabled="isSimulating">
+              </div>
+              <div class="col-md-4">
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    Bonds ({{config.bondReturn * 100}}% return)
+                  </span>
+                  <input pa-percentage class="form-control" type="text" ng-model="allocation.bond" max="config.wealthPerRound" ng-disabled="isSimulating">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <button class="btn btn-success" ng-click="confirmAllocation()" ng-disabled="isSimulating||isLoadingStochasticSeries">
+                  Confirm Allocation
+                </button>
+                <p class="pull-right">{{statusMessage}}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="col-md-4" style="height: 400px; overflow: scroll;">
+      <div class="col-md-4" style="height: 600px; overflow: scroll;">
         <table class="table table-bordered">
           <tr>
             <th>Stocks</th>
@@ -31,60 +73,6 @@
             <td>{{result.allocation.bond | number: 2}}</td>
             <td>{{result.marketReturn * 100 | number: 0}}%</td>
             <td>{{result.realizedReturn * 100 | number: 0}}%</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    <div class="row" style="margin-top: 40px">
-      <div class="col-md-8">
-        <div class="row">
-          <div class="col-md-12">
-            <p>Starting Wealth: {{config.wealthPerRound}}</p>
-          </div>
-        </div>
-        <div class="row" style="margin-bottom: 20px">
-          <div class="col-md-3">
-            <div class="input-group">
-              <span class="input-group-addon">
-                Stocks
-              </span>
-              <input pa-percentage class="form-control" type="text" ng-model="allocation.stock" max="config.wealthPerRound" ng-disabled="isSimulating">
-            </div>
-          </div>
-          <div class="col-md-5">
-            <input class="form-control" type="range" ng-model="allocation.bond" min="0" max="{{config.wealthPerRound}}" ng-disabled="isSimulating">
-          </div>
-          <div class="col-md-4">
-            <div class="input-group">
-              <span class="input-group-addon">
-                Bonds ({{config.bondReturn * 100}}% return)
-              </span>
-              <input pa-percentage class="form-control" type="text" ng-model="allocation.bond" max="config.wealthPerRound" ng-disabled="isSimulating">
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <button class="btn btn-success" ng-click="confirmAllocation()" ng-disabled="isSimulating||isLoadingStochasticSeries">
-              Confirm Allocation
-            </button>
-            <p class="pull-right">{{statusMessage}}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <table class="table table-bordered">
-          <tr>
-            <th>Value of Portfolio</th>
-            <td>{{portfolioValue | number: 2}}</td>
-          </tr>
-          <tr>
-            <th>Realized Gain/Loss</th>
-            <td>{{(bank - config.startingWealth) / config.startingWealth | number: 2}}</td>
-          </tr>
-          <tr>
-            <th>Wallet/Bank</th>
-            <td>{{bank | number: 2}}</td>
           </tr>
         </table>
       </div>
