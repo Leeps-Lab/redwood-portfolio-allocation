@@ -21,7 +21,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", function($scope, 
             
             var result = results[i];
 
-            $scope.results.push({
+            $scope.results[result.round] = {
                 round: result.round + 1,
                 stock: result.allocation.stock,
                 bond: result.allocation.bond,
@@ -31,7 +31,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", function($scope, 
                 points: 0.0,
                 earnings: 0.0,
                 selected: false
-            });
+            };
         }
 
         rs.send("__mark_paid__", {period: 1, paid: result.points})
