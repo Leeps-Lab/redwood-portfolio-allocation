@@ -23,7 +23,7 @@
             </tr>
           </thead>
           <tbody id="results">
-            <tr ng-repeat="result in results" ng-class="{warning: result.selected}">
+            <tr ng-repeat="result in results" ng-class="{warning: result.selected, info: result.isPracticeRound}">
               <td>{{result.round}}</td>
               <td style="text-align: right">{{result.stock | number:2}}</td>
               <td style="text-align: right">{{result.bond | number:2}}</td>

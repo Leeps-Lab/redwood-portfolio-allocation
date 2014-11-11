@@ -22,7 +22,7 @@ Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", function($scope, 
             var result = results[i];
 
             $scope.results.push({
-                round: result.round,
+                round: result.round + 1,
                 stock: result.allocation.stock,
                 bond: result.allocation.bond,
                 returnFromBonds: result.returnFromBonds,
