@@ -363,64 +363,41 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
         .attr("width", plotWidth)
         .attr("height", plotHeight);
 
-      var redrawMarketValues = function() {
-        if (scope.marketValues && rs.is_realtime) {
-          // plot market data
-          var data = plot.selectAll(".market-old").data(scope.marketValues);
-          data.enter()
-            .append("path")
-            .classed("series market-old", true);
-          data
-            .attr("d", lineFunction);
-          data.exit().remove();
-        }
-      }
-
-      redrawCurrentMarketValues = function() {
-        if (scope.marketValues && rs.is_realtime) {
-          // plot portfolio data
-          var path = plot.select(".market");
-          if (path.empty()) {
-            plot.append("path")
-              .datum(scope.currentMarketValues)
-              .classed("series market", true)
-              .attr("d", lineFunction);
-          } else {
-            path.datum(scope.currentMarketValues)
-              .attr("d", lineFunction);
+      var makeRedrawSeries = function(classname, dataname) {
+        return function() {
+          if (scope.marketValues && rs.is_realtime) {
+            var selection = plot.selectAll("." + classname).data(scope[dataname]);
+            selection.enter()
+              .append("path")
+              .classed("series " + classname, true);
+            selection.attr("d", lineFunction);
+            selection.exit().remove();
           }
         }
       }
 
-      var redrawPortfolioValues = function() {
-        if (scope.marketValues && rs.is_realtime) {
-          // plot portfolio data
-          var path = plot.select(".portfolio");
-          if (path.empty()) {
-            plot.append("path")
-              .datum(scope.portfolioValues)
-              .classed("series portfolio", true)
-              .attr("d", lineFunction);
-          } else {
-            path.datum(scope.portfolioValues)
-              .attr("d", lineFunction);
+      var makeRedrawLine = function(classname, datumname) {
+        return function() {
+          if (scope.marketValues && rs.is_realtime) {
+            var path = plot.select("." + classname);
+            if (path.empty()) {
+              plot.append("path")
+                .datum(scope[datumname])
+                .classed("series " + classname, true)
+                .attr("d", lineFunction);
+            } else {
+              path.datum(scope[datumname]).attr("d", lineFunction);
+            }
           }
         }
       }
 
-      var redrawPreSimulatedValues = function() {
-        if (scope.marketValues && rs.is_realtime) {
-          // plot existing market data
-          var data = plot.selectAll(".market-existing").data(scope.preSimulatedValues);
-          data.enter()
-            .append("path")
-            .attr("class", "series market-existing")
-          data.attr("d", lineFunction);
-          data.exit().remove();
-        }
-      }
+      var redrawMarketValues = makeRedrawSeries("market-old", "marketValues");
+      var redrawCurrentMarketValues = makeRedrawLine("market", "currentMarketValues");
+      var redrawPortfolioValues = makeRedrawLine("portfolio", "portfolioValues");
+      var redrawPreSimulatedValues = makeRedrawSeries("market-existing", "preSimulatedValues");
 
-      scope.$watch(function() {return scope.needsRedraw}, function() {
+      scope.$watch("needsRedraw", function() {
         redrawMarketValues();
         redrawCurrentMarketValues();
         redrawPortfolioValues();
@@ -428,26 +405,18 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
         scope.needsRedraw = false;
       });
       
-      scope.$watch(function() {return scope.marketValues}, function() {
+      scope.$watch("marketValues", function() {
         redrawMarketValues();
         // hack to make sure that the current market value stays on top
         d3.select(".market").remove();
         redrawCurrentMarketValues();
       }, true);
 
-      scope.$watch(function() {return scope.currentMarketValues}, function() {
-        redrawCurrentMarketValues();
-      }, true);
-      
-      scope.$watch(function() {return scope.portfolioValues}, function() {
-        redrawPortfolioValues();
-      }, true);
-      
-      scope.$watch(function() {return scope.preSimulatedValues}, function() {
-        redrawPreSimulatedValues();
-      }, true);
+      scope.$watch("currentMarketValues", redrawCurrentMarketValues, true);
+      scope.$watch("portfolioValues", redrawPortfolioValues, true);
+      scope.$watch("preSimulatedValues", redrawPreSimulatedValues, true);
 
-      scope.$watch(function() {return scope.config}, function() {
+      scope.$watch("config", function() {
         if (scope.config) {
 
           xScale = d3.scale.linear()
@@ -491,7 +460,6 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
 
           // 0th tick is more prominent
           svg.selectAll("g.y.axis .tick").filter(function(d) {
-            console.log(d)
             return d == 1;
           }).classed("center-tick", true);
         }
