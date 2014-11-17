@@ -36,6 +36,7 @@ input[type="radio"]:checked ~ .choice-background {
 
 .anchor-button {
   display: block;
+  width: inherit;
   height: 200px;
   margin-left: 10px;
   margin-right: 10px;
@@ -45,12 +46,11 @@ input[type="radio"]:checked ~ .choice-background {
   font-size: 48px;
   background: #00b64f;
   color: #ffffff;
+  border: 0;
   border-bottom: 8px solid #007633;
-  text-decoration: none;
 }
 
 .anchor-button:hover {
-  text-decoration: none;
   background: #37da7e;
   color: #ffffff;
   border-bottom: 8px solid #00b64f;
@@ -67,7 +67,7 @@ input[type="radio"]:checked ~ .choice-background {
   text-decoration: none
 }
 
-.disabled {
+.anchor-button:disabled {
   height: 200px !important;
   margin-top: 0px !important;
   cursor: default !important;

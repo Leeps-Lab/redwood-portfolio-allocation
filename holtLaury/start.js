@@ -74,6 +74,20 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
   $scope.redwoodLoaded = false;
   $scope.unansweredQuestions = 10;
 
+  $scope.finishPeriod = function() {
+    var score = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
+      return prev + (curr === "lessRisk" ? 1 : 0);
+    }, 0);
+
+    rs.trigger("finished_questions", {
+      "view": $scope.treatment,
+      "result": score,
+      "result-text": $scope.riskAversionText[score]
+    });
+
+    rs.next_period();
+  };
+
   rs.on("selected_option", function(value) {
     // seems redundant, but necessary for restoring when the page is refreshed
     $scope.subjectDecisions[value.question-1] = value.selection;
@@ -81,25 +95,8 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
     var answerCount = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
       return prev + (typeof curr !== "undefined" ? 1 : 0);
     }, 0);
+    
     $scope.unansweredQuestions = 10 - answerCount;
-
-    if (answerCount === 10) {
-      $("#finish-button").removeClass("disabled");
-      $("#finish-button").click(function() {
-        
-        var score = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
-          return prev + (curr === "lessRisk" ? 1 : 0);
-        }, 0);
-
-        rs.trigger("finished_questions", {
-          "view": $scope.treatment,
-          "result": score,
-          "result-text": $scope.riskAversionText[score]
-        });
-
-        rs.next_period();
-      });
-    }
   });
   
   rs.on_load(function() { //called once the page has loaded for a new sub period

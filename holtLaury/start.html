@@ -29,7 +29,10 @@
             </span>
           </label>
         </div>
-        <a id="finish-button" class="anchor-button disabled" href="javascript:" ng-switch="unansweredQuestions">
+        <button class="anchor-button"
+                ng-click="finishPeriod()"
+                ng-disabled="unansweredQuestions>0"
+                ng-switch="unansweredQuestions">
           <span ng-switch-when="1">
             1 Unanswered Question
           </span>
@@ -39,7 +42,7 @@
           <span ng-switch-default>
             {{unansweredQuestions}} Unanswered Questions
           </span>
-        </a>
+        </button>
       </div>
     </div>
   </div>
