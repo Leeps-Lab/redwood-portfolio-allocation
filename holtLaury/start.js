@@ -72,6 +72,7 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
   // bound to the users radio button selections
   $scope.subjectDecisions = [];
   $scope.redwoodLoaded = false;
+  $scope.unansweredQuestions = 10;
 
   rs.on("selected_option", function(value) {
     // seems redundant, but necessary for restoring when the page is refreshed
@@ -80,10 +81,10 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
     var answerCount = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
       return prev + (typeof curr !== "undefined" ? 1 : 0);
     }, 0);
-    
+    $scope.unansweredQuestions = 10 - answerCount;
+
     if (answerCount === 10) {
       $("#finish-button").removeClass("disabled");
-      $("#finish-button").text("I'm Done!");
       $("#finish-button").click(function() {
         
         var score = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
@@ -98,8 +99,6 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
 
         rs.next_period();
       });
-    } else {
-      $("#finish-button").text((10-answerCount).toString() + " Unanswered Questions");
     }
   });
   
