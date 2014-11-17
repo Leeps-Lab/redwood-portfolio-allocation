@@ -17,13 +17,23 @@
       <div class="span12">
         <div ng-repeat="decision in decisions" class="decision">
           <label for="choice-{{$index}}-0" class="choice">
-            <input id="choice-{{$index}}-0" name="decision-{{$index}}" type="radio" ng-model="subjectDecisions[$index]" value="lessRisk">
+            <input id="choice-{{$index}}-0"
+                   name="decision-{{$index}}"
+                   type="radio"
+                   ng-model="subjectDecisions[$index]"
+                   value="lessRisk"
+                   ng-click="selectOption($index, 'lessRisk')">
             <span ng-if="redwoodLoaded">
               <div class="outcome-view" choice-view choice="{{decision.choice1}}"></div>
             </span>
           </label>
           <label for="choice-{{$index}}-1" class="choice">
-            <input id="choice-{{$index}}-1" name="decision-{{$index}}" type="radio" ng-model="subjectDecisions[$index]" value="moreRisk">
+            <input id="choice-{{$index}}-1"
+                   name="decision-{{$index}}"
+                   type="radio"
+                   ng-model="subjectDecisions[$index]"
+                   value="moreRisk"
+                   ng-click="selectOption($index, 'moreRisk')">
             <span ng-if="redwoodLoaded">
               <div class="outcome-view" choice-view choice="{{decision.choice2}}"></div>
             </span>

@@ -88,6 +88,15 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
     rs.next_period();
   };
 
+  $scope.selectOption = function(decisionId, selection) {
+    rs.trigger("selected_option", {
+      "treatment": $scope.treatment,
+      "question-text": $scope.decisions[decisionId].text,
+      "question": decisionId+1,
+      "selection": selection 
+    });
+  };
+
   rs.on("selected_option", function(value) {
     // seems redundant, but necessary for restoring when the page is refreshed
     $scope.subjectDecisions[value.question-1] = value.selection;
@@ -95,7 +104,7 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
     var answerCount = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
       return prev + (typeof curr !== "undefined" ? 1 : 0);
     }, 0);
-    
+
     $scope.unansweredQuestions = 10 - answerCount;
   });
   
@@ -103,21 +112,6 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
     $scope.user_id = rs.user_id;
     $scope.treatment = rs.config.treatment;
     $scope.redwoodLoaded = true;
-    
-    $("input").click(function() {
-      var elem = $(this);
-      var id = elem.attr("id");
-      var tokens = id.split("-");
-      var decisionId = parseInt(tokens[1], 10);
-      var selection = elem.val();
-
-      rs.trigger("selected_option", {
-        "treatment": $scope.treatment,
-        "question-text": $scope.decisions[decisionId].text,
-        "question": decisionId+1,
-        "selection": selection 
-      });
-    });
   });
 }]);
 
