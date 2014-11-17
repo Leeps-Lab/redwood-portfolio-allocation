@@ -41,7 +41,7 @@
         </div>
         <button class="anchor-button"
                 ng-click="finishPeriod()"
-                ng-disabled="unansweredQuestions>0"
+                ng-disabled="unansweredQuestions > 0 || periodOver"
                 ng-switch="unansweredQuestions">
           <span ng-switch-when="1">
             1 Unanswered Question

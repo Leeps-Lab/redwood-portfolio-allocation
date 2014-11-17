@@ -1,14 +1,18 @@
+body {
+    background: #e8e8e8;
+}
+
 .decision {
   position: relative;
   overflow: auto;
-  padding: 0 10px;
+  padding: 20px 0;
+  border-bottom: thin solid #b8b8b8;
 }
 
 .choice {
   position: relative;
   float: left;
   width: 50%;
-  background: #f8f8f8;
 }
 
 .choice input[type=radio] {
@@ -38,8 +42,6 @@ input[type="radio"]:checked ~ .choice-background {
   display: block;
   width: inherit;
   height: 200px;
-  margin-left: 10px;
-  margin-right: 10px;
   margin-bottom: 20px;
   text-align: center;
   line-height: 200px;

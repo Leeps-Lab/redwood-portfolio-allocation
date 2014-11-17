@@ -73,6 +73,7 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
   $scope.subjectDecisions = [];
   $scope.redwoodLoaded = false;
   $scope.unansweredQuestions = 10;
+  $scope.periodOver = false;
 
   $scope.finishPeriod = function() {
     var score = $scope.subjectDecisions.reduce(function(prev, curr, index, array) {
@@ -84,7 +85,8 @@ Redwood.controller("SubjectCtrl", ["$rootScope", "$scope", "RedwoodSubject", fun
       "result": score,
       "result-text": $scope.riskAversionText[score]
     });
-
+    
+    $scope.periodOver = true;
     rs.next_period();
   };
 
