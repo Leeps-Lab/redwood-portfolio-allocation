@@ -72,7 +72,7 @@ Redwood.factory("PortfolioAllocation", ["$q", "$http", function($q, $http) {
 /*
   Application controller
 */
-Redwood.controller("SubjectCtrl", ["$scope", "RedwoodSubject", "$timeout", "PortfolioAllocation", function($scope, rs, $timeout, experiment) {
+Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout", "PortfolioAllocation", function($scope, rs, $timeout, experiment) {
   // Initialize some scope variables (the reset are initialized in on_load)
 
   $scope.isLoadingStochasticSeries = true;
