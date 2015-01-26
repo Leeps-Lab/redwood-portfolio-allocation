@@ -1,6 +1,0 @@
-period,groups,treatment
-1,"[[1, 2], [3, 4]]",text
-2,"[[1, 2], [3, 4]]",bar
-3,"[[1, 2], [3, 4]]",bar-height
-4,"[[1, 2], [3, 4]]",pie
-5,"[[1, 2], [3, 4]]",bar-inverted
