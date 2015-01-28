@@ -12,42 +12,15 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-12">
-        <table class="table table-bordered table-condensed">
-          <thead>
-            <tr>
-              <th>Round</th>
-              <th>Stocks</th>
-              <th>Bonds</th>
-              <th>Portifolio Value</th>
-              <th>Earnings</th>
-            </tr>
-          </thead>
-          <tbody id="results">
-            <tr ng-repeat="result in results" ng-class="{warning: result.selected, info: result.isPracticeRound}">
-              <td>{{result.round}}</td>
-              <td style="text-align: right">{{result.stock | number:2}}</td>
-              <td style="text-align: right">{{result.bond | number:2}}</td>
-              <td style="text-align: right">{{result.returnFromStocks + result.returnFromBonds | number:2}}</td>
-              <td style="text-align: right">{{result.earnings | currency}}</td>
-            </tr>
-            <tr class="warning">
-              <td ><strong>Show Up Fee</strong></td>
-              <td ></td>
-              <td ></td>
-              <td ></td>
-              <td style="text-align: right"><strong>$5.00</strong></td>
-            </tr>
-            <tr class="success">
-              <td><strong>Total</strong></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td style="text-align: right">
-                <strong>{{totalEarnings | currency}}</strong>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div rw-payout-table 
+          entries="results" 
+          payout-function="payoutFunction" 
+          fields="[
+            {key: 'round', name: 'Round', isNumber: false},
+            {key: 'stock', name: 'Stock', isNumber: true},
+            {key: 'bond', name: 'Bond', isNumber: true},
+            {key: 'portfolioValue', name: 'Portfolio Value', isNumber: true}
+          ]"></div>
       </div>
     </div>
   </div>
