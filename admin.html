@@ -64,18 +64,17 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <hr>
-                <p>Payoff Controls</p>
+                <div rw-payout-selector
+                    fields="[
+                        {
+                            key: 'select_payoff_round',
+                            name: 'Payoff Round',
+                            options: allRounds
+                        }
+                    ]"
+                ></div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12 form-inline">
-                <label>Round: </label>
-                <select class="form-control" ng-model="selectedRound" ng-options="round for round in allRounds"></select>
-                <button class="btn btn-primary" ng-click="selectRound()">Set Payoff Round</button>
-            </div>
-        </div>
-        <hr>
         <div class="row">
             <div class="col-md-12">
                 <h4>Configuration</h4>

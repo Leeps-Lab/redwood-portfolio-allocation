@@ -41,7 +41,7 @@ Redwood.controller("PAFinishController", ["$scope", "RedwoodSubject", function($
         recomputeEarnings();
     });
 
-    rs.on("selected_round", function(round) {
+    rs.on("select_payoff_round", function(round) {
         var result = $scope.results[round-1];
         result.selected = !result.selected;
         result.points = result.returnFromStocks + result.returnFromBonds;

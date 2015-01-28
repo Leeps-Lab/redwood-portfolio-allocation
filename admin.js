@@ -135,17 +135,10 @@ Redwood.controller("PAAdminController", ["$rootScope", "$scope", "Admin", functi
 
     ra.on_load(function () {
         resetGroups(); //Assign groups to users
-        $scope.selectedRound = 2;
         $scope.allRounds = [];
         for (var i = 0; i < ra.get_config(1, 1).rounds; ++i) {
             $scope.allRounds.push(i+1);
         }
-        $scope.selectRound = function() {
-            ra.subjects.forEach(function(subject) {
-                ra.sendAsSubject("selected_round", $scope.selectedRound, subject.user_id);
-            });
-        };
-        $scope.earnings = {};
     });
 
     ra.on_register(function(user) { //Add a row to the table to each user
