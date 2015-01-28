@@ -147,8 +147,8 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
   $scope.confirmAllocation = function() {
     $scope.isSimulating = true; // make sure controls are disabled
     $scope.statusMessage = "Waiting for other subjects...";
-    rs.synchronizationBarrier("confirm_" + $scope.round).then(function() {
-      rs.trigger("roundStarted", {
+    rs.synchronizationBarrier("pa.confirm_" + $scope.round).then(function() {
+      rs.trigger("pa.roundStarted", {
         round: $scope.round,
         allocation: $scope.allocation
       });
@@ -181,7 +181,7 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
           simulateDay(day, round, allocation);
           $timeout(simulatorForDay(day + 1), $scope.config.secondsPerDay * 1000);
         } else {
-          rs.trigger("roundEnded", {
+          rs.trigger("pa.roundEnded", {
             round: $scope.round,
             allocation: $scope.allocation,
             returnFromBonds: currentBondReturn(),
@@ -255,7 +255,7 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
 
   // Message Response Handlers
 
-  rs.on("roundStarted", function(data) {
+  rs.on("pa.roundStarted", function(data) {
     var is_realtime = rs.is_realtime;
 
     deferUntilFinishedLoading(function() {
@@ -274,7 +274,7 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
     });
   });
 
-  rs.on("roundEnded", function(data) {
+  rs.on("pa.roundEnded", function(data) {
     var is_realtime = rs.is_realtime;
     deferUntilFinishedLoading(function() {
       // if this is a sync message, recover the simulation for this round
@@ -283,7 +283,7 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
       }
 
       // set result data
-      rs.set("results", data);
+      rs.set("pa.results", data);
       
       $scope.marketValues.push($scope.currentMarketValues);
 
@@ -472,7 +472,7 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
 /*
   Percentage Input Directive
 */
-Redwood.directive("paPercentage", ["RedwoodSubject", "$filter", function(rs, $filter) {
+Redwood.directive("paPercentage", ["$filter", function($filter) {
   return {
     require: "ngModel",
     scope: {

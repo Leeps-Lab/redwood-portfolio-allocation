@@ -10,12 +10,12 @@ Redwood.controller("PAFinishController", ["$scope", "RedwoodSubject", function($
             return prev + next.earnings;
         }, 5.0);
 
-        rs.trigger("earnings", $scope.totalEarnings);
+        rs.trigger("pa.earnings", $scope.totalEarnings);
     };
 
     rs.on_load(function() {
 
-        var results = rs.subject[rs.user_id].data["results"];
+        var results = rs.subject[rs.user_id].data["pa.results"];
 
         for (var i = 0; i < results.length; i++) {
             
@@ -41,7 +41,7 @@ Redwood.controller("PAFinishController", ["$scope", "RedwoodSubject", function($
         recomputeEarnings();
     });
 
-    rs.on("select_payoff_round", function(round) {
+    rs.on("pa.select_payoff_round", function(round) {
         var result = $scope.results[round-1];
         result.selected = !result.selected;
         result.points = result.returnFromStocks + result.returnFromBonds;
