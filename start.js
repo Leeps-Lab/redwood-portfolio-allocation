@@ -182,6 +182,7 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
           $timeout(simulatorForDay(day + 1), $scope.config.secondsPerDay * 1000);
         } else {
           rs.trigger("pa.roundEnded", {
+            period: rs.period,
             round: $scope.round,
             allocation: $scope.allocation,
             returnFromBonds: currentBondReturn(),
