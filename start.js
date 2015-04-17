@@ -72,7 +72,13 @@ Redwood.factory("PortfolioAllocation", ["$q", "$http", function($q, $http) {
 /*
   Application controller
 */
-Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout", "PortfolioAllocation", function($scope, rs, $timeout, experiment) {
+Redwood.controller("PAStartController", [
+  "$scope",
+  "RedwoodSubject",
+  "$timeout",
+  "PortfolioAllocation",
+  "ConfigManager", 
+  function($scope, rs, $timeout, experiment, configManager) {
   // Initialize some scope variables (the reset are initialized in on_load)
 
   $scope.isLoadingStochasticSeries = true;
@@ -205,20 +211,20 @@ Redwood.controller("PAStartController", ["$scope", "RedwoodSubject", "$timeout",
 
   rs.on_load(function() {
     // Load configuration
-    $scope.config = {
-      rounds: rs.config.rounds                         || 20,
-      preSimulatedRounds: rs.config.preSimulatedRounds || 5,
-      practiceRounds: rs.config.practiceRounds         || 5,
-      daysPerRound: rs.config.daysPerRound             || 252,
-      secondsPerDay: rs.config.secondsPerDay           || 0.01,
-      startingWealth: rs.config.startingWealth         || 1000,
-      wealthPerRound: rs.config.wealthPerRound         || 1000,
-      minimumWealth: rs.config.minimumWealth           || 200,
-      bondReturn: rs.config.bondReturn                 || 0.2,
-      plotMinY: rs.config.plotMinY                     || 0.0,
-      plotMaxY: rs.config.plotMaxY                     || 2.0,
-      stochasticFunction: null,
-    };
+    $scope.config = configManager.loadPerSubject(rs, {
+      "rounds"             : 20,
+      "preSimulatedRounds" : 5,
+      "practiceRounds"     : 5,
+      "daysPerRound"       : 252,
+      "secondsPerDay"      : 0.01,
+      "startingWealth"     : 1000,
+      "wealthPerRound"     : 1000,
+      "minimumWealth"      : 200,
+      "bondReturn"         : 0.2,
+      "plotMinY"           : 0.0,
+      "plotMaxY"           : 2.0,
+      "stochasticFunction" : null,
+    });
 
     // Load stochastic function (may be a dropbox URL)
     // Don't allow allocation confirmation until the stochastic function has been loaded.
