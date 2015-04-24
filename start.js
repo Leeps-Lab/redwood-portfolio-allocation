@@ -230,7 +230,7 @@ Redwood.controller("PAStartController", [
     // Don't allow allocation confirmation until the stochastic function has been loaded.
     // Set the value of the stochastic function to the promise so that other things
     // that need to use it an schedule a then handler on the promise.
-    $scope.config.stochasticFunction = experiment.createStochasticFunction(rs.config.stochasticFunction)
+    $scope.config.stochasticFunction = experiment.createStochasticFunction($scope.config.stochasticFunction)
       .then(function(stochasticFunction) {
         $scope.isLoadingStochasticSeries = false;
 
