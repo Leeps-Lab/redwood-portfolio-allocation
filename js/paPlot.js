@@ -1,7 +1,7 @@
 /*
   Plot Directive
 */
-Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
+portfolioAllocation.directive("paPlot", ["RedwoodSubject", function(rs) {
   return {
     scope: {
       marketValues: "=", // The set of sequences of market values

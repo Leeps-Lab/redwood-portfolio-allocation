@@ -1,4 +1,4 @@
-Redwood.controller("paFinishCtrl", ["$scope", "RedwoodSubject", function($scope, rs) {
+portfolioAllocation.controller("paFinishCtrl", ["$scope", "RedwoodSubject", function($scope, rs) {
   
     $scope.results = []
 

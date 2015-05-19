@@ -1,7 +1,7 @@
 /*
   Application controller
 */
-Redwood.controller("paStartCtrl", [
+portfolioAllocation.controller("paStartCtrl", [
   "$scope",
   "RedwoodSubject",
   "$timeout",

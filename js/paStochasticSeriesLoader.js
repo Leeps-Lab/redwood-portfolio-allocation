@@ -1,7 +1,7 @@
 /*
   Convenience functions, mostly for loading stochastic series data
 */
-Redwood.factory("paStochasticSeriesLoader", ["$q", "$http", function($q, $http) {
+portfolioAllocation.factory("paStochasticSeriesLoader", ["$q", "$http", function($q, $http) {
   var api = {};
 
   api.defaultStochasticFunction = function(x, round) {

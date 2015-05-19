@@ -1,7 +1,7 @@
 /*
   Percentage Input Directive
 */
-Redwood.directive("paPercentage", ["$filter", function($filter) {
+portfolioAllocation.directive("paPercentage", ["$filter", function($filter) {
   return {
     require: "ngModel",
     scope: {
