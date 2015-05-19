@@ -219,7 +219,6 @@ Redwood.controller("PAStartController", [
       "secondsPerDay"      : 0.01,
       "startingWealth"     : 1000,
       "wealthPerRound"     : 1000,
-      "minimumWealth"      : 200,
       "bondReturn"         : 0.2,
       "plotMinY"           : 0.0,
       "plotMaxY"           : 2.0,
@@ -256,7 +255,6 @@ Redwood.controller("PAStartController", [
       bond: $scope.config.wealthPerRound/2
     };
 
-    $scope.bank = $scope.config.startingWealth;
     $scope.realizedGain = 0;
   });
 
@@ -307,17 +305,6 @@ Redwood.controller("PAStartController", [
         realizedReturn: realizedReturnPercentage,
         isPracticeResult: data.isPracticeRound
       });
-
-      // MONEY IN THE BANK
-      if (!data.isPracticeRound) {
-        $scope.bank += totalReturn - $scope.config.wealthPerRound;
-      }
-
-      // if the subject is broke, end this guy's whole career
-      if ($scope.bank <= $scope.config.minimumWealth) {
-        $scope.bank = $scope.config.minimumWealth;
-        rs.next_period(5);
-      }
 
       $scope.round = data.round + 1;
       $scope.isSimulating = false;
@@ -465,11 +452,6 @@ Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
             .classed("y axis", true)
             .attr("transform", "translate(" + xOffset + ",0)")
             .call(yAxis)
-
-          // 0th tick is more prominent
-          svg.selectAll("g.y.axis .tick").filter(function(d) {
-            return d == 1;
-          }).classed("center-tick", true);
         }
       });
     }
