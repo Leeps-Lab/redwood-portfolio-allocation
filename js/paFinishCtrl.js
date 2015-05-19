@@ -1,4 +1,4 @@
-Redwood.controller("PAFinishController", ["$scope", "RedwoodSubject", function($scope, rs) {
+Redwood.controller("paFinishCtrl", ["$scope", "RedwoodSubject", function($scope, rs) {
   
     $scope.results = []
 

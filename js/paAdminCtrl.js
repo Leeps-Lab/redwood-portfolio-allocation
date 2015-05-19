@@ -1,4 +1,4 @@
-Redwood.controller("PAAdminAdditionsController", ["Admin", "$scope", function(ra, $scope) {
+Redwood.controller("paAdminCtrl", ["Admin", "$scope", function(ra, $scope) {
     var period = 1;
 
     ra.on_load(function () {

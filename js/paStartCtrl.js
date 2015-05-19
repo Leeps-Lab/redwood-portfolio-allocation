@@ -1,84 +1,13 @@
 /*
-  Portfolio Allocation: start.js
-*/
-
-/*
-  Convenience functions, mostly for loading stochastic series data
-*/
-Redwood.factory("PortfolioAllocation", ["$q", "$http", function($q, $http) {
-  var api = {};
-
-  api.defaultStochasticFunction = function(x, round) {
-    return Math.random() * 1000 + 500;
-  };
-
-  // returns a promise that passes a function to its then callback
-  api.createStochasticFunction = function(configString) {
-    var matchURL = configString.match(/http.*/);
-    if (matchURL) {
-      // get stochastic series csv file from URL
-      var fullURL = configString;
-      var deferred = $q.defer();
-
-      $http({method: "GET", url: fullURL})
-        .success(function(data, status, headers, config) {
-          // build stochastic series (simple csv parsing with String.split)
-          var rows = data.split("\n");
-
-          // create series arrays
-          var stochasticSeries = [];
-          for (var i = 0; i < rows[0].split(",").length; i++) {
-            stochasticSeries[i] = [];
-          }
-
-          // fill arrays with csv data
-          for (var i = 0; i < rows.length; i++) {
-            var cells = rows[i].split(",");
-            for (var j = 0; j < cells.length; j++) {
-              stochasticSeries[j][i] = parseFloat(cells[j]);
-            }
-          }
-          console.log(stochasticSeries);
-
-          var stochasticFunction = function(x, round) {
-            // normalized to 0.5 to 1.5, for now
-            return stochasticSeries[round % stochasticSeries.length][x] / 1000.0;
-          };
-
-          deferred.resolve(stochasticFunction);
-        })
-        .error(function(data, status, headers, config) {
-          console.log("(;-;) " + data);
-          deferred.resolve(status);
-        });
-
-      return deferred.promise;
-
-    } else if (configString) {
-      var deferred = $q.defer();
-      deferred.resolve(new Function("x", "round", "return " + configString));
-      return deferred.promise;
-
-    } else {
-      var deferred = $q.defer();
-      deferred.resolve(api.defaultStochasticFunction);
-      return deferred.promise;
-    }
-  };
-
-  return api;
-}]);
-
-/*
   Application controller
 */
-Redwood.controller("PAStartController", [
+Redwood.controller("paStartCtrl", [
   "$scope",
   "RedwoodSubject",
   "$timeout",
-  "PortfolioAllocation",
+  "paStochasticSeriesLoader",
   "ConfigManager", 
-  function($scope, rs, $timeout, experiment, configManager) {
+  function($scope, rs, $timeout, seriesLoader, configManager) {
   // Initialize some scope variables (the reset are initialized in on_load)
 
   $scope.isLoadingStochasticSeries = true;
@@ -229,7 +158,7 @@ Redwood.controller("PAStartController", [
     // Don't allow allocation confirmation until the stochastic function has been loaded.
     // Set the value of the stochastic function to the promise so that other things
     // that need to use it an schedule a then handler on the promise.
-    $scope.config.stochasticFunction = experiment.createStochasticFunction($scope.config.stochasticFunction)
+    $scope.config.stochasticFunction = seriesLoader.createStochasticFunction($scope.config.stochasticFunction)
       .then(function(stochasticFunction) {
         $scope.isLoadingStochasticSeries = false;
 
@@ -318,166 +247,4 @@ Redwood.controller("PAStartController", [
     });
   });
 
-}]);
-
-/*
-  Plot Directive
-*/
-Redwood.directive("paPlot", ["RedwoodSubject", function(rs) {
-  return {
-    scope: {
-      marketValues: "=", // The set of sequences of market values
-      currentMarketValues: "=", // The current sequence of market values
-      preSimulatedValues: "=", // The set of sequences of existing market values
-      portfolioValues: "=", // The current sequence of total portfolio return
-      config: "=", // the experiment configuration
-      needsRedraw: "=", // when set, the directive will attempt to redraw the plot
-    },
-    link: function(scope, element, attrs) {
-
-      var xOffset = 30;
-      var yOffset = 25;
-      var width = $(element).width();
-      var height = $(element).height();
-      var plotWidth = width - xOffset;
-      var plotHeight = height - yOffset;
-      var xScale;
-      var yScale;
-      var lineFunction;
-
-      var svg = d3.select(".pa-plot")
-        .attr("width", width)
-        .attr("height", height);
-      var plot = svg.append("g")
-        .attr("transform", "translate(" + xOffset + ",0)")
-
-      plot.append("rect")
-        .classed("plot-background", true)
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", plotWidth)
-        .attr("height", plotHeight);
-
-      var makeRedrawSeries = function(classname, dataname) {
-        return function() {
-          if (scope.marketValues && rs.is_realtime) {
-            var selection = plot.selectAll("." + classname).data(scope[dataname]);
-            selection.enter()
-              .append("path")
-              .classed("series " + classname, true);
-            selection.attr("d", lineFunction);
-            selection.exit().remove();
-          }
-        }
-      }
-
-      var makeRedrawLine = function(classname, datumname) {
-        return function() {
-          if (scope.marketValues && rs.is_realtime) {
-            var path = plot.select("." + classname);
-            if (path.empty()) {
-              plot.append("path")
-                .datum(scope[datumname])
-                .classed("series " + classname, true)
-                .attr("d", lineFunction);
-            } else {
-              path.datum(scope[datumname]).attr("d", lineFunction);
-            }
-          }
-        }
-      }
-
-      var redrawMarketValues = makeRedrawSeries("market-old", "marketValues");
-      var redrawCurrentMarketValues = makeRedrawLine("market", "currentMarketValues");
-      var redrawPortfolioValues = makeRedrawLine("portfolio", "portfolioValues");
-      var redrawPreSimulatedValues = makeRedrawSeries("market-existing", "preSimulatedValues");
-
-      scope.$watch("needsRedraw", function() {
-        redrawMarketValues();
-        redrawCurrentMarketValues();
-        redrawPortfolioValues();
-        redrawPreSimulatedValues();
-        scope.needsRedraw = false;
-      });
-      
-      scope.$watch("marketValues", function() {
-        redrawMarketValues();
-        // hack to make sure that the current market value stays on top
-        d3.select(".market").remove();
-        redrawCurrentMarketValues();
-      }, true);
-
-      scope.$watch("currentMarketValues", redrawCurrentMarketValues, true);
-      scope.$watch("portfolioValues", redrawPortfolioValues, true);
-      scope.$watch("preSimulatedValues", redrawPreSimulatedValues, true);
-
-      scope.$watch("config", function() {
-        if (scope.config) {
-
-          xScale = d3.scale.linear()
-            .domain([0, scope.config.daysPerRound-1])
-            .range([0, plotWidth]);
-          yScale = d3.scale.linear()
-            .domain([scope.config.plotMinY, scope.config.plotMaxY])
-            .range([plotHeight, 0]);
-
-          lineFunction = d3.svg.line()
-            .x(function(datum) {
-              return xScale(datum[0]);
-            })
-            .y(function(datum) {
-              return yScale(datum[1] - 1.0);
-          });
-
-          var xAxis = d3.svg.axis()
-            .ticks(5)
-            .tickSize(-plotHeight)
-            .scale(xScale)
-            .orient("bottom");
-          var yAxis = d3.svg.axis()
-            .ticks(5)
-            .tickSize(-plotWidth)
-            .scale(yScale)
-            .orient("left");
-
-          svg.select("g.x.axis").remove();
-          svg.select("g.y.axis").remove();
-
-          svg.append("g")
-            .classed("x axis", true)
-            .attr("transform", "translate(" + xOffset + ", " + (plotHeight) + ")")
-            .call(xAxis);
-
-          svg.append("g")
-            .classed("y axis", true)
-            .attr("transform", "translate(" + xOffset + ",0)")
-            .call(yAxis)
-        }
-      });
-    }
-  }
-}]);
-
-/*
-  Percentage Input Directive
-*/
-Redwood.directive("paPercentage", ["$filter", function($filter) {
-  return {
-    require: "ngModel",
-    scope: {
-      max: "="
-    },
-    link: function(scope, element, attrs, controller) {
-      controller.$parsers.push(
-          function(viewValue){
-              return parseFloat(viewValue * scope.max) / 100;
-          }
-      );
-      controller.$formatters.push(
-          function(modelValue){
-              return $filter('number')(modelValue / scope.max * 100, 1) + "%";
-          }
-      );
-    }
-  }
 }]);
